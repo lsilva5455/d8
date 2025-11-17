@@ -7,6 +7,10 @@ from flask import Flask, jsonify, request
 from app.config import config
 from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome, DeepSeekEvolutionEngine, EvolutionOrchestrator
+from app.knowledge.code_vault import CodeVault
+from app.agents.coder_agent import CoderAgent
+from app.evolution.self_healing import SelfHealingOrchestrator
+from app.utils.code_ingestor import CodeIngestor
 from typing import List
 import logging
 import os
@@ -32,6 +36,11 @@ population: List[BaseAgent] = []
 evolution_engine: DeepSeekEvolutionEngine = None
 orchestrator: EvolutionOrchestrator = None
 
+# D8-GENESIS components
+code_vault: CodeVault = None
+coder_agent: CoderAgent = None
+healer: SelfHealingOrchestrator = None
+
 
 @app.route('/')
 def index():
@@ -41,11 +50,20 @@ def index():
         "project": "The Hive",
         "version": "0.1.0",
         "population_size": len(population),
+        "d8_genesis": {
+            "code_vault_ready": code_vault is not None,
+            "coder_agent_ready": coder_agent is not None,
+            "healer_ready": healer is not None
+        },
         "endpoints": {
             "/": "This health check",
             "/api/agents": "List all agents",
             "/api/agents/<id>": "Get agent details",
-            "/api/evolve": "Trigger evolution cycle"
+            "/api/evolve": "Trigger evolution cycle",
+            "/api/genesis/ingest": "Ingest legacy code",
+            "/api/genesis/generate": "Generate polymorphic code",
+            "/api/genesis/heal": "Self-heal broken code",
+            "/api/genesis/stats": "D8-GENESIS statistics"
         }
     })
 
@@ -144,9 +162,168 @@ def agent_act(agent_id: str):
     })
 
 
+# ==================== D8-GENESIS ENDPOINTS ====================
+
+@app.route('/api/genesis/ingest', methods=['POST'])
+def ingest_legacy_code():
+    """
+    Ingest legacy code from specified path
+    
+    Request body:
+    {
+        "path": "/path/to/legacy_code",  # Optional, defaults to ./legacy_code
+        "recursive": true                # Optional, defaults to true
+    }
+    """
+    global code_vault
+    
+    if not code_vault:
+        return jsonify({"error": "Code Vault not initialized"}), 500
+    
+    data = request.json or {}
+    path = data.get('path', './legacy_code')
+    recursive = data.get('recursive', True)
+    
+    logger.info(f"📥 Ingesting legacy code from: {path}")
+    
+    try:
+        ingestor = CodeIngestor(path)
+        fragments = ingestor.scan_and_parse(recursive=recursive)
+        code_vault.ingest_fragments(fragments)
+        
+        stats = code_vault.get_stats()
+        
+        logger.info(f"✅ Ingested {len(fragments)} code fragments")
+        
+        return jsonify({
+            "success": True,
+            "fragments_ingested": len(fragments),
+            "stats": stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Ingestion failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/genesis/generate', methods=['POST'])
+def generate_code():
+    """
+    Generate polymorphic code for a task
+    
+    Request body:
+    {
+        "task": "Create function to like posts on Instagram",
+        "platform": "instagram",  # Optional
+        "action": "like"          # Optional
+    }
+    """
+    global coder_agent
+    
+    if not coder_agent:
+        return jsonify({"error": "Coder Agent not initialized"}), 500
+    
+    data = request.json
+    
+    if not data or 'task' not in data:
+        return jsonify({"error": "Missing 'task' in request body"}), 400
+    
+    task = data['task']
+    platform = data.get('platform')
+    action = data.get('action')
+    
+    logger.info(f"🔧 Generating code for: {task}")
+    
+    try:
+        result = coder_agent.generate_code(
+            task_description=task,
+            platform=platform,
+            action=action
+        )
+        
+        logger.info(f"✅ Code generated with {len(result.get('polymorphism_applied', []))} polymorphic techniques")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Code generation failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/genesis/heal', methods=['POST'])
+def heal_code():
+    """
+    Self-heal broken code
+    
+    Request body:
+    {
+        "code": "def my_func(): ...",
+        "error": "NameError: name 'x' is not defined",
+        "context": "Additional context about the error"  # Optional
+    }
+    """
+    global coder_agent
+    
+    if not coder_agent:
+        return jsonify({"error": "Coder Agent not initialized"}), 500
+    
+    data = request.json
+    
+    if not data or 'code' not in data or 'error' not in data:
+        return jsonify({"error": "Missing 'code' or 'error' in request body"}), 400
+    
+    broken_code = data['code']
+    error_message = data['error']
+    context = data.get('context', '')
+    
+    logger.info(f"🩹 Healing code with error: {error_message[:50]}...")
+    
+    try:
+        result = coder_agent.self_heal(
+            broken_code=broken_code,
+            error_message=error_message,
+            additional_context=context
+        )
+        
+        logger.info(f"✅ Code healed successfully")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Code healing failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/genesis/stats', methods=['GET'])
+def genesis_stats():
+    """Get D8-GENESIS statistics"""
+    global code_vault, coder_agent, healer
+    
+    stats = {
+        "code_vault": None,
+        "coder_agent": None,
+        "self_healing": None
+    }
+    
+    if code_vault:
+        stats["code_vault"] = code_vault.get_stats()
+    
+    if coder_agent:
+        stats["coder_agent"] = coder_agent.get_status()
+    
+    if healer:
+        stats["self_healing"] = healer.get_stats()
+    
+    return jsonify(stats)
+
+
+# ==================== END D8-GENESIS ENDPOINTS ====================
+
+
 def initialize_hive():
     """Initialize the hive with starting population"""
     global population, evolution_engine, orchestrator
+    global code_vault, coder_agent, healer
     
     logger.info("🐝 Initializing The Hive...")
     
@@ -166,6 +343,19 @@ def initialize_hive():
         mutation_rate=config.evolution.mutation_rate,
         crossover_rate=config.evolution.crossover_rate
     )
+    
+    # Initialize D8-GENESIS components
+    logger.info("🧬 Initializing D8-GENESIS module...")
+    try:
+        code_vault = CodeVault()
+        coder_agent = CoderAgent(evolution_engine, code_vault)
+        healer = SelfHealingOrchestrator(coder_agent, max_healing_attempts=3)
+        logger.info("✅ D8-GENESIS initialized successfully")
+    except Exception as e:
+        logger.warning(f"⚠️ D8-GENESIS initialization failed (non-critical): {e}")
+        code_vault = None
+        coder_agent = None
+        healer = None
     
     # Create initial population with diverse prompts
     initial_prompts = [

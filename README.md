@@ -48,6 +48,14 @@ The Hive is an evolutionary AI agent ecosystem where:
       │ Groq         │  │ DeepSeek  │  │  ChromaDB   │
       │ (Fast Action)│  │ (Evolution)│  │  (Memory)   │
       └──────────────┘  └───────────┘  └─────────────┘
+                                              │
+                                    ┌─────────▼──────────┐
+                                    │   D8-GENESIS       │
+                                    │  (Self-Coding)     │
+                                    │  - Code Vault      │
+                                    │  - Coder Agent     │
+                                    │  - Self-Healing    │
+                                    └────────────────────┘
 ```
 
 ### Key Components
@@ -62,9 +70,16 @@ The Hive is an evolutionary AI agent ecosystem where:
    - **Mutation:** Introduces controlled variations
    - **Selection:** Tournament selection for parents
 
-3. **Flask API** (`app/main.py`)
+3. **D8-GENESIS Module** 🆕 (`docs/D8_GENESIS_MODULE.md`)
+   - **Code Vault:** RAG system for legacy code retrieval
+   - **Coder Agent:** Polymorphic code generation
+   - **Self-Healing:** Autonomous error detection and repair
+   - **Anti-Fingerprinting:** Evades detection systems
+
+4. **Flask API** (`app/main.py`)
    - RESTful interface to control the hive
    - Endpoints for agent management and evolution
+   - D8-GENESIS integration endpoints
 
 ---
 
@@ -328,6 +343,7 @@ curl http://localhost:5000/api/agents | jq '.agents | sort_by(.fitness) | revers
 - [x] Evolution engine (crossover, mutation)
 - [x] Flask API
 - [x] Configuration system
+- [x] D8-GENESIS module (self-coding & healing)
 
 ### Phase 2: Content Empire (In Progress)
 - [ ] WordPress integration
@@ -336,7 +352,7 @@ curl http://localhost:5000/api/agents | jq '.agents | sort_by(.fitness) | revers
 - [ ] Automated publishing
 
 ### Phase 3: Intelligence Layer
-- [ ] ChromaDB memory integration
+- [x] ChromaDB memory integration (Code Vault)
 - [ ] Agent collaboration protocols
 - [ ] Meta-learning from top performers
 
@@ -344,6 +360,8 @@ curl http://localhost:5000/api/agents | jq '.agents | sort_by(.fitness) | revers
 - [ ] Appium integration
 - [ ] Device orchestration
 - [ ] Bug bounty automation
+- [x] Polymorphic code generation (anti-detection)
+- [x] Self-healing execution loop
 
 ---
 
@@ -381,6 +399,7 @@ This is a personal project, but ideas are welcome!
 
 ## 📚 Additional Resources
 
+- [D8-GENESIS Module](docs/D8_GENESIS_MODULE.md) - Self-coding & healing system
 - [Strategic Analysis](ESTRATEGIA_MONETIZACION.md) - Full monetization comparison
 - [Experiences Base](documentacion/experiencias_profundas/EXPERIENCIAS_BASE.md) - Development methodology
 - [Groq API Docs](https://console.groq.com/docs)
