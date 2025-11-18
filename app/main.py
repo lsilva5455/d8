@@ -11,6 +11,7 @@ from app.knowledge.code_vault import CodeVault
 from app.agents.coder_agent import CoderAgent
 from app.evolution.self_healing import SelfHealingOrchestrator
 from app.utils.code_ingestor import CodeIngestor
+from app.distributed.orchestrator import orchestrator_bp, orchestrator
 from typing import List
 import logging
 import os
@@ -31,10 +32,13 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 
+# Register distributed orchestrator blueprint
+app.register_blueprint(orchestrator_bp)
+
 # Global state (in production, use proper state management)
 population: List[BaseAgent] = []
 evolution_engine: DeepSeekEvolutionEngine = None
-orchestrator: EvolutionOrchestrator = None
+orchestrator_evo: EvolutionOrchestrator = None
 
 # D8-GENESIS components
 code_vault: CodeVault = None
@@ -97,7 +101,7 @@ def evolve_population():
     Trigger one evolution cycle
     Returns new population status
     """
-    global population, orchestrator
+    global population, orchestrator_evo
     
     if not population:
         return jsonify({"error": "No population to evolve"}), 400
@@ -113,7 +117,7 @@ def evolve_population():
             genomes[i].fitness = agent.get_fitness()
         
         # Evolve
-        new_genomes = orchestrator.evolve_generation(genomes)
+        new_genomes = orchestrator_evo.evolve_generation(genomes)
         
         # Create new agent population
         population.clear()
@@ -125,11 +129,11 @@ def evolve_population():
             )
             population.append(agent)
         
-        logger.info(f"✅ Evolution complete: Generation {orchestrator.generation}")
+        logger.info(f"✅ Evolution complete: Generation {orchestrator_evo.generation}")
         
         return jsonify({
             "success": True,
-            "generation": orchestrator.generation,
+            "generation": orchestrator_evo.generation,
             "population_size": len(population),
             "best_fitness": max(g.fitness for g in new_genomes),
             "avg_fitness": sum(g.fitness for g in new_genomes) / len(new_genomes)
@@ -322,7 +326,7 @@ def genesis_stats():
 
 def initialize_hive():
     """Initialize the hive with starting population"""
-    global population, evolution_engine, orchestrator
+    global population, evolution_engine, orchestrator_evo
     global code_vault, coder_agent, healer
     
     logger.info("🐝 Initializing The Hive...")
@@ -336,7 +340,7 @@ def initialize_hive():
         model=config.api.deepseek_model
     )
     
-    orchestrator = EvolutionOrchestrator(
+    orchestrator_evo = EvolutionOrchestrator(
         engine=evolution_engine,
         population_size=config.evolution.population_size,
         elite_size=config.evolution.elite_size,
