@@ -1,0 +1,85 @@
+{
+  "name": "The Hive - AI Agent Ecosystem",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "eamodio.gitlens",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "njpwerner.autodocstring",
+        "aaron-bond.better-comments",
+        "christian-kohler.path-intellisense"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        },
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/*.pyc": true,
+          ".pytest_cache": true,
+          "**/.mypy_cache": true
+        }
+      }
+    }
+  },
+
+  "forwardPorts": [5000, 11434],
+  "portsAttributes": {
+    "5000": {
+      "label": "Flask API Server",
+      "onAutoForward": "notify"
+    },
+    "11434": {
+      "label": "Ollama API",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "containerEnv": {
+    "FLASK_ENV": "development",
+    "FLASK_DEBUG": "True",
+    "FLASK_PORT": "5000",
+    "DEEPSEEK_BASE_URL": "http://localhost:11434",
+    "DEEPSEEK_MODEL": "deepseek-coder:33b",
+    "CHROMA_PERSIST_DIRECTORY": "./data/chromadb",
+    "LOG_LEVEL": "INFO"
+  },
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  "remoteUser": "vscode",
+  "updateContentCommand": "pip install --no-cache-dir -r requirements.txt",
+  
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env,target=/workspaces/d8/.env,type=bind,consistency=cached"
+  ],
+
+  "workspaceFolder": "/workspaces/d8",
+
+  "waitFor": "postCreateCommand"
+}
