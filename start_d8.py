@@ -2,7 +2,6 @@
 """
 D8 System Launcher
 Punto de entrada único para iniciar el sistema D8
-
 """
 import sys
 import subprocess
