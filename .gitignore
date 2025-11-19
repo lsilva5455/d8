@@ -48,6 +48,8 @@ data/logs/*.log
 # Data directories
 data/genomes/*
 data/metrics/*
+data/congress_experiments/*
+data/test_results/*
 data/chroma_db/*
 !data/**/.gitkeep
 
@@ -65,3 +67,8 @@ Thumbs.db
 
 # Appium
 appium.log
+
+# Obsolete config files (now in ~/Documents)
+.env.worker*
+.env.example
+agentes/

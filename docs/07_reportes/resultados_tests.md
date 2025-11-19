@@ -267,8 +267,8 @@ Configurar Groq worker AHORA (ver `SETUP_GROQ_WORKER.md`) para probar sistema co
 
 ## 🔗 Referencias
 
-- **Documentación:** `docs/DISTRIBUTED_ARCHITECTURE.md`
-- **Setup Raspi:** `docs/RASPBERRY_PI_SETUP.md`
+- **Documentación:** `docs/01_arquitectura/distribuido.md`
+- **Setup Raspi:** `docs/02_setup/raspberry_pi.md`
 - **Configuración Worker:** `.env.worker`
 - **Launcher:** `launch_distributed.bat`
 

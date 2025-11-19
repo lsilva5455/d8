@@ -137,11 +137,11 @@ class DistributedWorker:
         try:
             # Import appropriate client based on worker type
             if self.config.worker_type == "groq":
-                from app.integrations.groq_client import GroqClient
+                from lib.llm import GroqClient
                 client = GroqClient(api_key=self.config.api_key)
                 
             elif self.config.worker_type == "gemini":
-                from app.integrations.gemini_client import GeminiClient
+                from lib.llm import GeminiClient
                 client = GeminiClient(api_key=self.config.api_key)
                 
             elif self.config.worker_type == "claude":

@@ -181,7 +181,7 @@ Cada 24 horas. Si agotaste la quota hoy, vuelve a intentar mañana.
 1. **AHORA:** Ejecuta `.\setup_groq.ps1`
 2. **2 min después:** Ejecuta `.\test_groq_system.ps1`
 3. **Si funciona:** Implementa Opción A o B
-4. **Deploy:** Sigue `docs/RASPBERRY_PI_SETUP.md`
+4. **Deploy:** Sigue `docs/02_setup/raspberry_pi.md`
 
 ---
 

@@ -3,7 +3,7 @@ Groq-based Evolution Engine
 Lightweight alternative to DeepSeek for resource-constrained environments (Raspberry Pi)
 """
 
-from app.integrations.groq_client import GroqClient
+from lib.llm import GroqClient
 from app.evolution.darwin import Genome
 from dataclasses import dataclass
 import logging

@@ -1,15 +1,22 @@
 """
 Configuration Module
-Centralized settings loaded from environment variables
+Centralized settings loaded from JSON configs in Documents
 """
 
 import os
+import json
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict, Any
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (fallback for dev)
 load_dotenv()
+
+# Base paths - Consolidated under d8_data/
+D8_DATA_PATH = Path(os.path.expanduser("~/Documents/d8_data"))
+AGENTS_BASE_PATH = D8_DATA_PATH / "agentes"
+WORKERS_BASE_PATH = D8_DATA_PATH / "workers"
 
 
 @dataclass
@@ -36,13 +43,13 @@ class AgentConfig:
     """Agent behavior settings"""
     max_actions_per_day: int = 1000
     action_cooldown_seconds: int = 60
-    groq_model: str = "mixtral-8x7b-32768"
+    groq_model: str = "llama-3.3-70b-versatile"
 
 
 @dataclass
 class MemoryConfig:
     """Vector database settings"""
-    chroma_persist_directory: str = "./data/chroma_db"
+    chroma_persist_directory: str = str(AGENTS_BASE_PATH / "memories/vector_store")
     chroma_collection_name: str = "agent_memory"
 
 
@@ -65,7 +72,7 @@ class DeviceFarmConfig:
 class LoggingConfig:
     """Logging settings"""
     log_level: str = "INFO"
-    log_file: str = "./data/logs/hive.log"
+    log_file: str = str(AGENTS_BASE_PATH / "logs/hive.log")
 
 
 @dataclass
@@ -80,54 +87,67 @@ class Config:
     """Main configuration object"""
     
     def __init__(self):
-        # API Configuration
+        # Load JSON configs
+        self._load_agent_config()
+        self._load_worker_config()
+        
+        # API Configuration (prioritize JSON, fallback to .env)
+        groq_key = self._agent_config.get("api", {}).get("groq_api_key") or os.getenv("GROQ_API_KEY")
+        if not groq_key:
+            raise ValueError("GROQ_API_KEY not found in agent config or .env")
+            
         self.api = APIConfig(
-            groq_api_key=self._get_required_env("GROQ_API_KEY"),
+            groq_api_key=groq_key,
             deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "http://localhost:11434"),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-coder:33b")
         )
         
         # Evolution Configuration
+        evo = self._agent_config.get("evolution", {})
         self.evolution = EvolutionConfig(
-            population_size=int(os.getenv("POPULATION_SIZE", 20)),
-            mutation_rate=float(os.getenv("MUTATION_RATE", 0.1)),
-            crossover_rate=float(os.getenv("CROSSOVER_RATE", 0.7)),
-            generations=int(os.getenv("GENERATIONS", 100)),
-            elite_size=int(os.getenv("ELITE_SIZE", 2)),
-            fitness_evaluation_interval=int(os.getenv("FITNESS_EVALUATION_INTERVAL", 86400))
+            population_size=evo.get("population_size", 20),
+            mutation_rate=evo.get("mutation_rate", 0.1),
+            crossover_rate=evo.get("crossover_rate", 0.7),
+            generations=evo.get("generations", 100),
+            elite_size=evo.get("elite_size", 2),
+            fitness_evaluation_interval=self._agent_config.get("agent_limits", {}).get("fitness_evaluation_interval", 86400)
         )
         
         # Agent Configuration
+        limits = self._agent_config.get("agent_limits", {})
         self.agent = AgentConfig(
-            max_actions_per_day=int(os.getenv("MAX_ACTIONS_PER_DAY", 1000)),
-            action_cooldown_seconds=int(os.getenv("ACTION_COOLDOWN_SECONDS", 60)),
+            max_actions_per_day=limits.get("max_actions_per_day", 1000),
+            action_cooldown_seconds=limits.get("action_cooldown_seconds", 60),
             groq_model=os.getenv("GROQ_MODEL", "mixtral-8x7b-32768")
         )
         
         # Memory Configuration
+        mem = self._agent_config.get("memory", {})
         self.memory = MemoryConfig(
-            chroma_persist_directory=os.getenv("CHROMA_PERSIST_DIRECTORY", "./data/chroma_db"),
-            chroma_collection_name=os.getenv("CHROMA_COLLECTION_NAME", "agent_memory")
+            chroma_persist_directory=str(AGENTS_BASE_PATH / mem.get("vector_store_path", "memories/vector_store")),
+            chroma_collection_name=mem.get("chroma_collection_name", "agent_memory")
         )
         
         # Content Empire Configuration
+        ce = self._agent_config.get("content_empire", {})
         self.content_empire = ContentEmpireConfig(
-            wordpress_url=os.getenv("WORDPRESS_URL"),
-            wordpress_username=os.getenv("WORDPRESS_USERNAME"),
-            wordpress_password=os.getenv("WORDPRESS_PASSWORD")
+            wordpress_url=ce.get("wordpress_url"),
+            wordpress_username=ce.get("wordpress_username"),
+            wordpress_password=ce.get("wordpress_password")
         )
         
         # Device Farm Configuration
-        android_devices_str = os.getenv("ANDROID_DEVICES", "")
+        df = self._agent_config.get("device_farm", {})
         self.device_farm = DeviceFarmConfig(
-            appium_server_url=os.getenv("APPIUM_SERVER_URL", "http://localhost:4723"),
-            android_devices=android_devices_str.split(",") if android_devices_str else []
+            appium_server_url=df.get("appium_server_url", "http://localhost:4723"),
+            android_devices=df.get("android_devices", [])
         )
         
         # Logging Configuration
+        log = self._agent_config.get("logging", {})
         self.logging = LoggingConfig(
-            log_level=os.getenv("LOG_LEVEL", "INFO"),
-            log_file=os.getenv("LOG_FILE", "./data/logs/hive.log")
+            log_level=log.get("level", "INFO"),
+            log_file=str(AGENTS_BASE_PATH / log.get("path", "logs") / "hive.log")
         )
         
         # Flask Configuration
@@ -136,6 +156,26 @@ class Config:
             flask_debug=os.getenv("FLASK_DEBUG", "True").lower() == "true",
             flask_port=int(os.getenv("FLASK_PORT", 5000))
         )
+    
+    def _load_agent_config(self) -> None:
+        """Load agent configuration from JSON"""
+        config_path = AGENTS_BASE_PATH / "config.json"
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                self._agent_config = json.load(f)
+        else:
+            print(f"⚠️  Agent config not found at {config_path}, using defaults")
+            self._agent_config = {}
+    
+    def _load_worker_config(self) -> None:
+        """Load worker configuration from JSON"""
+        config_path = WORKERS_BASE_PATH / "config.json"
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                self._worker_config = json.load(f)
+        else:
+            print(f"⚠️  Worker config not found at {config_path}, using defaults")
+            self._worker_config = {}
     
     def _get_required_env(self, key: str) -> str:
         """Get required environment variable or raise error"""

@@ -1,83 +1,75 @@
-# 🐝 The Hive - Evolutionary AI Agent Ecosystem
+# 🤖 D8 - Sistema de IA Completamente Autónomo
 
-**An autonomous system where AI agents evolve through genetic algorithms to maximize real-world revenue.**
+**Sistema de inteligencia artificial que se mejora a sí mismo sin intervención humana.**
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/flask-3.0-green.svg)](https://flask.palletsprojects.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Groq](https://img.shields.io/badge/groq-llama--3.3-orange.svg)](https://groq.com/)
 
 ---
 
-## 🎯 Overview
+## 🎯 ¿Qué es D8?
 
-The Hive is an evolutionary AI agent ecosystem where:
-- **Agents** act autonomously using Groq (fast, cheap inference)
-- **Evolution** happens via DeepSeek (local, zero API cost)
-- **Fitness** is measured by real revenue and engagement metrics
-- **Natural Selection** ensures only profitable agents survive
+D8 es un ecosistema de IA con tres sistemas autónomos:
 
-**Think of it as:** Pokémon breeding meets AI agents meets real business.
+1. **🧬 Sistema Evolutivo**: Selección natural de agentes mediante algoritmos genéticos
+2. **💎 Niche Discovery**: Descubrimiento automático de nichos rentables
+3. **🏛️ Congreso Autónomo**: Investigación, experimentación y mejora continua del sistema
+
+**Característica principal:** Cero intervención humana. D8 evoluciona, experimenta y se optimiza automáticamente.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Arquitectura
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         THE HIVE                            │
-│                    (Flask API Server)                       │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ├─────────────────┐
-                              │                 │
-                    ┌─────────▼────────┐  ┌────▼──────────┐
-                    │   Agent Pool     │  │   Evolution   │
-                    │   (Population)   │  │   Engine      │
-                    └─────────┬────────┘  └────┬──────────┘
-                              │                 │
-                    ┌─────────▼─────────────────▼─────┐
-                    │        Base Agent                │
-                    │  - Genome (System Prompt)        │
-                    │  - act() → Groq API             │
-                    │  - Fitness Metrics              │
-                    └──────────┬──────────────────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-      ┌───────▼──────┐  ┌─────▼─────┐  ┌──────▼──────┐
-      │ Groq         │  │ DeepSeek  │  │  ChromaDB   │
-      │ (Fast Action)│  │ (Evolution)│  │  (Memory)   │
-      └──────────────┘  └───────────┘  └─────────────┘
-                                              │
-                                    ┌─────────▼──────────┐
-                                    │   D8-GENESIS       │
-                                    │  (Self-Coding)     │
-                                    │  - Code Vault      │
-                                    │  - Coder Agent     │
-                                    │  - Self-Healing    │
-                                    └────────────────────┘
+┌──────────────────────────────────────┐
+│     SISTEMA EVOLUTIVO (Darwin)       │
+│  Evolución genética de agentes       │
+│  → Mutación, Crossover, Selección    │
+└──────────────┬───────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────┐
+│      NICHE DISCOVERY                 │
+│  Descubrimiento de nichos rentables  │
+│  → Análisis de mercado automático    │
+└──────────────┬───────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────┐
+│      CONGRESO AUTÓNOMO               │
+│  Mejora continua del sistema         │
+│  → Research → Test → Implement       │
+└──────────────────────────────────────┘
 ```
 
-### Key Components
+### Componentes Principales
 
-1. **Base Agent** (`app/agents/base_agent.py`)
-   - Contains genetic material (system prompt)
-   - Uses Groq for fast decision-making
-   - Tracks fitness metrics (revenue, engagement, success rate)
+1. **Sistema Evolutivo** (`app/evolution/darwin.py`)
+   - Selección natural mediante fitness
+   - Operadores genéticos: mutación (10%), crossover, elite
+   - Población de 20 agentes por generación
 
-2. **Evolution Engine** (`app/evolution/darwin.py`)
-   - **Crossover:** Merges two parent prompts intelligently
-   - **Mutation:** Introduces controlled variations
-   - **Selection:** Tournament selection for parents
+2. **Niche Discovery** (`scripts/niche_discovery_agent.py`)
+   - Agente especializado en descubrir nichos
+   - Análisis automático de mercados
+   - Genera reportes de oportunidades
 
-3. **D8-GENESIS Module** 🆕 (`docs/D8_GENESIS_MODULE.md`)
-   - **Code Vault:** RAG system for legacy code retrieval
-   - **Coder Agent:** Polymorphic code generation
-   - **Self-Healing:** Autonomous error detection and repair
-   - **Anti-Fingerprinting:** Evades detection systems
+3. **Congreso Autónomo** (`scripts/autonomous_congress.py`)
+   - 5 miembros: Researcher, Experimenter, Optimizer, Implementer, Validator
+   - Ciclo completo: Investiga → Experimenta → Valida → Implementa
+   - Mejora el sistema automáticamente sin intervención humana
 
-4. **Flask API** (`app/main.py`)
-   - RESTful interface to control the hive
+4. **Base Agent** (`app/agents/base_agent.py`)
+   - Genoma (system prompt) que define comportamiento
+   - Usa Groq LLM (llama-3.3-70b-versatile)
+   - Tracking de métricas de fitness
+
+5. **Orchestrator + Workers** (`app/distributed/`)
+   - Arquitectura distribuida para escalar
+   - Orchestrator Flask en puerto 5000
+   - Workers Groq para procesamiento
    - Endpoints for agent management and evolution
    - D8-GENESIS integration endpoints
 
@@ -85,167 +77,168 @@ The Hive is an evolutionary AI agent ecosystem where:
 
 ## 🚀 Quick Start
 
-### 1. Prerequisites
+---
+
+## 🚀 Instalación
+
+### 1. Requisitos
+
+- Python 3.10+
+- Groq API Key (gratis: https://console.groq.com/)
+- Windows PowerShell o Linux/Mac terminal
+
+### 2. Clonar e Instalar
 
 ```bash
-# Python 3.10+
-python --version
-
-# Ollama (for DeepSeek local)
-curl https://ollama.ai/install.sh | sh
-ollama pull deepseek-coder:33b
-ollama serve
-```
-
-### 2. Installation
-
-```bash
-# Clone repository
 git clone https://github.com/lsilva5455/d8.git
 cd d8
 
-# Run setup script
-bash setup_project.sh
+# Crear entorno virtual
+python -m venv venv
 
-# Install dependencies
+# Activar entorno (Windows PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# O en Linux/Mac
+source venv/bin/activate
+
+# Instalar dependencias
 pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
 ```
 
-### 3. Configure API Keys
+### 3. Configurar
 
-Edit `.env`:
+Crear archivo `.env` en la raíz:
 ```bash
-GROQ_API_KEY=gsk_your_groq_api_key_here
-DEEPSEEK_BASE_URL=http://localhost:11434
-DEEPSEEK_MODEL=deepseek-coder:33b
+GROQ_API_KEY=gsk_tu_api_key_aqui
 ```
 
-Get your Groq API key: https://console.groq.com/
+**IMPORTANTE**: La configuración de agentes y workers ahora está en:
+- `C:\Users\TuUsuario\Documents\d8_data\agentes\config.json`
+- `C:\Users\TuUsuario\Documents\d8_data\workers\groq\worker_config.json`
+- `C:\Users\TuUsuario\Documents\d8_data\workers\groq\credentials.json`
 
-### 4. Run The Hive
+Estos archivos se crean automáticamente la primera vez que ejecutas el sistema.
+
+### 4. Ejecutar
 
 ```bash
-python app/main.py
-```
+# Opción 1: Sistema completo (orchestrator + worker)
+python -m app.main
 
-The server will start on `http://localhost:5000`
+# Opción 2: Congreso autónomo (mejora continua)
+python scripts\autonomous_congress.py
+
+# Opción 3: Niche Discovery
+python scripts\niche_discovery_agent.py
+
+# Opción 4: Sistema evolutivo
+python -m app.evolution.groq_evolution
+```
 
 ---
 
-## 📡 API Usage
+---
 
-### Health Check
+## 📊 Uso del Sistema
+
+### Orchestrator API
+
 ```bash
+# Verificar estado
 curl http://localhost:5000/
-```
 
-### List All Agents
-```bash
-curl http://localhost:5000/api/agents
-```
+# Listar workers activos
+curl http://localhost:5000/api/workers
 
-Response:
-```json
-{
-  "total": 20,
-  "agents": [
-    {
-      "agent_id": "abc123...",
-      "generation": 0,
-      "fitness": 45.2,
-      "metrics": {
-        "total_actions": 100,
-        "success_rate": 0.95,
-        "revenue": 50.0
-      }
-    }
-  ]
-}
-```
-
-### Trigger Agent Action
-```bash
-curl -X POST http://localhost:5000/api/agents/<agent_id>/act \
+# Enviar tarea
+curl -X POST http://localhost:5000/api/tasks \
   -H "Content-Type: application/json" \
   -d '{
-    "action_type": "generate_content",
-    "input_data": {
-      "niche": "AI tools",
-      "target_audience": "developers"
-    }
+    "task_type": "analyze",
+    "data": {"text": "ejemplo"}
   }'
 ```
 
-### Evolve Population
+### Congreso Autónomo
+
 ```bash
-curl -X POST http://localhost:5000/api/evolve
+# Ejecutar ciclo de mejora continua
+python scripts\autonomous_congress.py
+
+# El congreso automáticamente:
+# 1. Investiga nuevas técnicas
+# 2. Diseña experimentos
+# 3. Ejecuta pruebas A/B
+# 4. Valida resultados
+# 5. Implementa mejoras
+# 6. Repite el ciclo
 ```
 
-This will:
-1. Evaluate fitness of all agents
-2. Select elite performers
-3. Breed new generation via crossover
-4. Apply mutations
-5. Return new population stats
+### Niche Discovery
+
+```bash
+# Descubrir nichos rentables
+python scripts\niche_discovery_agent.py
+
+# Analiza mercados y genera reporte en:
+# data/test_results/niche_discovery.json
+```
 
 ---
 
-## 🧬 How Evolution Works
+## 🧬 Cómo Funciona la Evolución
 
-### Fitness Function
+### Función de Fitness
 
 ```python
 fitness = (
-    0.5 * revenue_generated +      # Primary metric
-    0.3 * success_rate * 100 +     # Reliability
-    0.2 * engagement_score         # Quality
+    0.5 * revenue_generated +      # Métrica principal
+    0.3 * success_rate * 100 +     # Confiabilidad
+    0.2 * engagement_score         # Calidad
 )
 ```
 
-### Genetic Operations
+### Operadores Genéticos
 
-**Crossover (Breeding):**
+**Crossover (Reproducción):**
 ```
-Parent A: "You are a tech blogger focused on AI tools..."
-Parent B: "You are a product reviewer specializing in SaaS..."
-          ↓ [DeepSeek analyzes and merges]
-Child:    "You are an AI-focused product analyst reviewing 
-           SaaS tools with technical depth and user perspective..."
-```
-
-**Mutation (Variation):**
-```
-Original: "Write formal technical documentation..."
-          ↓ [Mutation: tone_shift]
-Mutated:  "Explain complex topics in casual, accessible language..."
+Padre A: "Eres un analista de tendencias..."
+Padre B: "Eres un creador de contenido viral..."
+         ↓ [Groq analiza y combina]
+Hijo:    "Eres un estratega de contenido que analiza 
+          tendencias y crea narrativas virales..."
 ```
 
-### Selection Strategy
+**Mutación (Variación):**
+```
+Original: "Escribe de forma técnica y formal..."
+          ↓ [Mutación: cambio de tono]
+Mutado:   "Explica conceptos complejos de forma casual..."
+```
 
-1. **Tournament Selection:** Pick 3 random agents, choose best 2 as parents
-2. **Elitism:** Top 2 agents always survive unchanged
-3. **Crossover Rate:** 70% of offspring are hybrids, 30% are clones
-4. **Mutation Rate:** 10% of genes get mutated
+### Estrategia de Selección
+
+1. **Torneo:** Selecciona 3 agentes aleatorios, elige los 2 mejores
+2. **Elitismo:** Top 20% siempre sobrevive
+3. **Tasa de Crossover:** 70% híbridos, 30% clones
+4. **Tasa de Mutación:** 10% de variación genética
 
 ---
 
-## 💰 Monetization Strategy
+## 💰 Estrategia de Monetización
 
-See [ESTRATEGIA_MONETIZACION.md](ESTRATEGIA_MONETIZACION.md) for full analysis.
+Ver [docs/03_operaciones/monetizacion.md](docs/03_operaciones/monetizacion.md) para análisis completo.
 
-**Recommended: Content Empire** (Phase 1)
-- Lower technical barrier
-- Predictable ROI
-- Scales horizontally
-- 100% legal
+**Fase 1: Content Empire**
+- Generación de contenido para redes sociales
+- Gestión de múltiples nichos
+- ROI predecible
 
-**Future: Hybrid Model** (Phase 2+)
-- 70% Content Empire (stable revenue)
-- 30% Device Farm (high-value opportunities)
+**Fase 2: Niche Discovery**
+- Descubrimiento automático de oportunidades
+- Análisis de mercados emergentes
+- Escalado inteligente
 
 ---
 
@@ -254,49 +247,71 @@ See [ESTRATEGIA_MONETIZACION.md](ESTRATEGIA_MONETIZACION.md) for full analysis.
 ```
 d8/
 ├── app/
-│   ├── agents/              # Agent implementations
-│   │   └── base_agent.py    # Core agent class
-│   ├── evolution/           # Genetic algorithms
-│   │   └── darwin.py        # Crossover & mutation
-│   ├── integrations/        # External APIs
-│   │   ├── groq_client.py   # Fast inference
-│   │   └── deepseek_client.py  # Local evolution
-│   ├── memory/              # Vector DB (future)
-│   ├── utils/               # Utilities
-│   ├── config.py            # Configuration
-│   └── main.py              # Flask server
-├── data/
-│   ├── genomes/             # Saved agent genomes
-│   ├── metrics/             # Performance data
-│   └── logs/                # Application logs
-├── tests/                   # Test suite
-├── docs/                    # Documentation
-├── requirements.txt         # Dependencies
-├── setup_project.sh         # Setup script
-└── .env.example             # Environment template
+---
+
+## 📂 Estructura del Proyecto
+
 ```
+d8/
+├── app/                     # Código principal
+│   ├── agents/              # Implementaciones de agentes
+│   │   └── base_agent.py    # Clase base de agente
+│   ├── evolution/           # Algoritmos genéticos
+│   │   ├── darwin.py        # Crossover y mutación
+│   │   └── groq_evolution.py # Evolución con Groq
+│   ├── distributed/         # Sistema distribuido
+│   │   ├── orchestrator.py  # Orquestador central
+│   │   └── worker_groq.py   # Worker Groq
+│   ├── integrations/        # APIs externas
+│   │   ├── groq_client.py   # Cliente Groq
+│   │   └── gemini_client.py # Cliente Gemini
+│   ├── memory/              # Sistema de memoria
+│   ├── utils/               # Utilidades
+│   ├── config.py            # Configuración
+│   └── main.py              # Servidor Flask
+├── scripts/                 # Scripts de ejecución
+│   ├── autonomous_congress.py  # Congreso autónomo
+│   ├── niche_discovery_agent.py # Descubrimiento de nichos
+│   ├── tests/               # Scripts de prueba
+│   ├── setup/               # Scripts de configuración
+│   └── launch/              # Scripts de lanzamiento
+├── data/                    # Datos del sistema
+│   ├── genomes/             # Genomas guardados
+│   ├── metrics/             # Datos de rendimiento
+│   ├── logs/                # Logs de aplicación
+│   └── congress_experiments/ # Resultados del congreso
+├── tests/                   # Suite de tests
+├── docs/                    # Documentación
+│   ├── ARQUITECTURA_D8.md   # Arquitectura completa
+│   ├── ESTRATEGIA_MONETIZACION.md
+│   └── ...
+├── config/                  # Configuraciones adicionales
+├── .env                     # Variables de entorno
+├── .gitignore              # Git ignore
+├── requirements.txt         # Dependencias
+├── LEER_PRIMERO.md         # Guía de inicio rápido
+└── README.md               # Este archivo
+```
+
+**Nota:** La configuración de agentes y workers está en `~/Documents/d8_data/`:
+- `~/Documents/d8_data/agentes/config.json` - Configuración del ecosistema
+- `~/Documents/d8_data/workers/groq/` - Configuración de workers Groq
 
 ---
 
-## 🔧 Configuration
+## 🔧 Configuración
 
-All settings in `.env`:
+Variables en `.env`:
 
 ```bash
-# Evolution Parameters
-POPULATION_SIZE=20           # Number of agents
-MUTATION_RATE=0.1           # 10% mutation chance
-CROSSOVER_RATE=0.7          # 70% crossover chance
-GENERATIONS=100             # Max generations
-ELITE_SIZE=2                # Top agents to preserve
+# API Keys
+GROQ_API_KEY=gsk_tu_key_aqui
 
-# Agent Behavior
-MAX_ACTIONS_PER_DAY=1000    # Rate limiting
-ACTION_COOLDOWN_SECONDS=60  # Cooldown between actions
-
-# APIs
-GROQ_API_KEY=your_key       # Required
-DEEPSEEK_BASE_URL=http://localhost:11434  # Local
+# Parámetros de Evolución (en ~/Documents/d8_data/agentes/config.json)
+# - population_size: 20
+# - mutation_rate: 0.1
+# - generations: 100
+# - elite_size: top 20%
 ```
 
 ---
@@ -304,102 +319,98 @@ DEEPSEEK_BASE_URL=http://localhost:11434  # Local
 ## 🧪 Testing
 
 ```bash
-# Run all tests
+# Ejecutar tests
 pytest
 
-# Run with coverage
+# Con cobertura
 pytest --cov=app tests/
 
-# Run specific test
+# Test específico
 pytest tests/unit/test_agent.py
+
+# Scripts de prueba del sistema
+python scripts/tests/test_content_empire.py
+python scripts/tests/test_device_farm.py
 ```
 
 ---
 
-## 📈 Monitoring & Metrics
+## 📈 Monitoreo
 
-**Per Agent:**
-- `total_actions`: Count of actions taken
-- `success_rate`: % of successful actions
-- `revenue_generated`: Total $ earned
-- `fitness`: Combined score
+**Por Agente:**
+- `total_actions`: Acciones ejecutadas
+- `success_rate`: % de éxito
+- `revenue`: Ingresos generados
+- `fitness`: Score combinado
 
-**Per Generation:**
-- `best_fitness`: Top performer
-- `avg_fitness`: Population average
-- `generation`: Current generation number
+**Por Generación:**
+- `best_fitness`: Mejor performer
+- `avg_fitness`: Promedio poblacional
+- `generation`: Número de generación
 
-View in real-time:
-```bash
-curl http://localhost:5000/api/agents | jq '.agents | sort_by(.fitness) | reverse | .[0:5]'
-```
+**Resultados del Congreso:**
+- Guardados en `data/congress_experiments/`
+- Cada ciclo genera reporte JSON con mejoras implementadas
 
 ---
 
 ## 🛣️ Roadmap
 
-### Phase 1: Core System (✅ Complete)
-- [x] Base agent implementation
-- [x] Evolution engine (crossover, mutation)
-- [x] Flask API
-- [x] Configuration system
-- [x] D8-GENESIS module (self-coding & healing)
+### ✅ Fase 1: Sistema Base
+- [x] Implementación de agentes
+- [x] Motor de evolución (crossover, mutación)
+- [x] API Flask
+- [x] Sistema de configuración
+- [x] Congreso autónomo
 
-### Phase 2: Content Empire (In Progress)
-- [ ] WordPress integration
-- [ ] SEO optimization module
-- [ ] Content quality scoring
-- [ ] Automated publishing
+### 🚧 Fase 2: Optimización
+- [x] Niche Discovery automático
+- [x] Congreso de mejora continua
+- [ ] Integración con APIs de monetización
+- [ ] Dashboard de métricas
 
-### Phase 3: Intelligence Layer
-- [x] ChromaDB memory integration (Code Vault)
-- [ ] Agent collaboration protocols
-- [ ] Meta-learning from top performers
-
-### Phase 4: Device Farm (Future)
-- [ ] Appium integration
-- [ ] Device orchestration
-- [ ] Bug bounty automation
-- [x] Polymorphic code generation (anti-detection)
-- [x] Self-healing execution loop
+### 🔮 Fase 3: Escalado
+- [ ] Múltiples workers distribuidos
+- [ ] Memoria vectorial (ChromaDB)
+- [ ] Colaboración entre agentes
+- [ ] Auto-escalado según demanda
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contribuir
 
-This is a personal project, but ideas are welcome!
+Proyecto personal, pero ideas son bienvenidas!
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open Pull Request
-
----
-
-## ⚠️ Important Notes
-
-### Cost Optimization
-- **Groq:** ~$0.10 per 1M tokens (Mixtral)
-- **DeepSeek:** $0 (runs locally via Ollama)
-- **Expected:** $20-50/month for 100 agents at moderate activity
-
-### Legal & Ethics
-- Generated content must be original
-- Respect platform TOS (WordPress, Medium, etc.)
-- Device Farm features may violate app TOS (use carefully)
-- This is experimental software, use responsibly
-
-### Performance
-- Groq responses: 50-200ms
-- DeepSeek evolution: 10-30s per operation
-- Recommended: Run on machine with 16GB+ RAM for local DeepSeek
+1. Fork del repositorio
+2. Crear rama (`git checkout -b feature/mejora`)
+3. Commit cambios (`git commit -m 'Add mejora'`)
+4. Push a rama (`git push origin feature/mejora`)
+5. Crear Pull Request
 
 ---
 
-## 📚 Additional Resources
+## ⚠️ Notas Importantes
 
-- [D8-GENESIS Module](docs/D8_GENESIS_MODULE.md) - Self-coding & healing system
+### Optimización de Costos
+- **Groq (Gratis):** 30 req/min, 14,400 req/día
+- **Llama-3.3-70b:** Modelo gratuito de alta calidad
+- **Costo:** $0/mes en tier gratuito
+
+### Legal y Ética
+- El sistema es completamente autónomo pero debe usarse responsablemente
+- Respetar TOS de plataformas
+- Software experimental - usar bajo tu responsabilidad
+
+### Rendimiento
+- Groq: ~500ms por inferencia
+- Congreso autónomo: ~2-5 ciclos/hora
+- Recomendado: Ejecución 24/7 para máximo aprendizaje
+
+---
+
+## 📚 Documentación Adicional
+
+- [D8-GENESIS Module](docs/02_setup/genesis_module.md) - Self-coding & healing system
 - [Strategic Analysis](ESTRATEGIA_MONETIZACION.md) - Full monetization comparison
 - [Experiences Base](documentacion/experiencias_profundas/EXPERIENCIAS_BASE.md) - Development methodology
 - [Groq API Docs](https://console.groq.com/docs)

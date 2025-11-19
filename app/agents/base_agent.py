@@ -74,7 +74,7 @@ class BaseAgent:
                  genome: Genome,
                  groq_api_key: str,
                  agent_id: Optional[str] = None,
-                 model: str = "mixtral-8x7b-32768"):
+                 model: str = "llama-3.3-70b-versatile"):
         self.agent_id = agent_id or str(uuid.uuid4())
         self.genome = genome
         self.model = model
@@ -119,12 +119,21 @@ class BaseAgent:
                 model=self.model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=2000,
-                response_format={"type": "json_object"}  # Force JSON output
+                max_tokens=2000
+                # Note: llama-3.3 doesn't support response_format yet
             )
             
-            # Parse response
-            result = json.loads(response.choices[0].message.content)
+            # Try to parse response as JSON
+            content = response.choices[0].message.content
+            try:
+                result = json.loads(content)
+            except json.JSONDecodeError:
+                # If not JSON, wrap in generic format
+                result = {
+                    "action": action_type,
+                    "response": content,
+                    "success": True
+                }
             
             # Calculate execution time
             execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000

@@ -302,7 +302,7 @@ class SelfHealingOrchestrator:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
-    from app.integrations.deepseek_client import DeepSeekClient
+    from lib.llm import DeepSeekClient
     from app.knowledge.code_vault import CodeVault
     from app.agents.coder_agent import CoderAgent
     

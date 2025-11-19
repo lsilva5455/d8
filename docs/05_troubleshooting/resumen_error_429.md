@@ -213,7 +213,7 @@ El problema era **exclusivamente externo** (límites de Google API).
 ### Después (implementación)
 4. **Opción A:** Content Empire con 5 agentes
 5. **Opción B:** Device Farm con 20 dispositivos
-6. **Deploy:** Raspberry Pi (docs/RASPBERRY_PI_SETUP.md)
+6. **Deploy:** Raspberry Pi (docs/02_setup/raspberry_pi.md)
 
 ---
 

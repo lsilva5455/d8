@@ -12,7 +12,7 @@ from datetime import datetime
 
 from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome
-from app.integrations.deepseek_client import DeepSeekClient
+from lib.llm import DeepSeekClient
 from app.knowledge.code_vault import CodeVault
 
 logger = logging.getLogger(__name__)

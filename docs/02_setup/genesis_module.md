@@ -232,7 +232,7 @@ python app/knowledge/code_vault.py stats
 ### Step 3: Generate Polymorphic Code
 
 ```python
-from app.integrations.deepseek_client import DeepSeekClient
+from lib.llm import DeepSeekClient
 from app.knowledge.code_vault import CodeVault
 from app.agents.coder_agent import CoderAgent
 

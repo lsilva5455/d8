@@ -2,29 +2,73 @@
 """Groq Worker - Fast, reliable, and generous free tier"""
 
 import os
+import json
 import time
 import requests
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
-from dotenv import load_dotenv
+from pathlib import Path
 from groq import Groq
 
-# Load environment
-load_dotenv('.env.worker.groq')
+# Worker configuration - Consolidated under d8_data/
+D8_DATA_PATH = Path(os.path.expanduser("~/Documents/d8_data"))
+WORKERS_BASE_PATH = D8_DATA_PATH / "workers"
+
+def load_worker_config() -> Dict[str, Any]:
+    """Load worker configuration from JSON"""
+    config_path = WORKERS_BASE_PATH / "groq/worker_config.json"
+    creds_path = WORKERS_BASE_PATH / "groq/credentials.json"
+    
+    if not config_path.exists():
+        raise FileNotFoundError(f"Worker config not found: {config_path}")
+    if not creds_path.exists():
+        raise FileNotFoundError(f"Credentials not found: {creds_path}")
+    
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    with open(creds_path, 'r') as f:
+        creds = json.load(f)
+    
+    return {**config, **creds}
 
 @dataclass
 class WorkerConfig:
-    worker_id: str = os.getenv('WORKER_ID', 'groq-worker-1')
-    worker_type: str = 'groq'
-    orchestrator_url: str = os.getenv('ORCHESTRATOR_URL', 'http://localhost:5000')
-    poll_interval: int = int(os.getenv('WORKER_POLL_INTERVAL', '5'))
-    api_key: str = os.getenv('GROQ_API_KEY', '')
+    worker_id: str
+    worker_type: str
+    orchestrator_url: str
+    poll_interval: int
+    api_key: str
+    model: str
+    
+    @classmethod
+    def from_json(cls, config_data: Dict[str, Any]):
+        """Create config from JSON data"""
+        worker = config_data.get("worker", {})
+        model = config_data.get("model", {})
+        polling = config_data.get("polling", {})
+        
+        # Get orchestrator URL from main config
+        main_config_path = WORKERS_BASE_PATH / "config.json"
+        orchestrator_url = "http://localhost:5000"
+        if main_config_path.exists():
+            with open(main_config_path, 'r') as f:
+                main_config = json.load(f)
+                orchestrator_url = main_config.get("orchestrator", {}).get("url", orchestrator_url)
+        
+        return cls(
+            worker_id=worker.get("id", "groq-worker-1"),
+            worker_type=worker.get("type", "groq"),
+            orchestrator_url=orchestrator_url,
+            poll_interval=polling.get("interval_seconds", 5),
+            api_key=config_data.get("api_key", ""),
+            model=model.get("name", "llama-3.3-70b-versatile")
+        )
 
 class GroqWorker:
     def __init__(self, config: WorkerConfig):
         self.config = config
         self.client = Groq(api_key=config.api_key)
-        self.model = "llama-3.3-70b-versatile"
+        self.model = config.model
         
         # Stats
         self.total_requests = 0
@@ -33,16 +77,21 @@ class GroqWorker:
     def register(self) -> bool:
         """Register with orchestrator"""
         try:
+            # Load capabilities from config
+            config_data = load_worker_config()
+            capabilities = config_data.get("capabilities", {})
+            model_info = config_data.get("model", {})
+            
             response = requests.post(
                 f"{self.config.orchestrator_url}/api/workers/register",
                 json={
                     "worker_id": self.config.worker_id,
                     "worker_type": self.config.worker_type,
                     "capabilities": {
-                        "models": [self.model],
-                        "max_tokens": 32768,
-                        "supports_streaming": True,
-                        "speed": "very_fast"
+                        "models": [model_info.get("name", self.model)],
+                        "max_tokens": model_info.get("max_tokens", 32768),
+                        "supports_streaming": model_info.get("supports_streaming", True),
+                        "speed": model_info.get("speed_class", "very_fast")
                     }
                 },
                 timeout=10
@@ -69,7 +118,13 @@ class GroqWorker:
     def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute agent action via Groq"""
         try:
-            task_data = task.get('task_data', {})
+            # Handle both formats: task with task_data or direct data
+            if 'task_data' in task:
+                task_data = task.get('task_data', {})
+            else:
+                # Direct format from orchestrator
+                task_data = task
+            
             messages = task_data.get('messages', [])
             
             # Call Groq API
@@ -113,9 +168,10 @@ class GroqWorker:
         """Report task result"""
         try:
             response = requests.post(
-                f"{self.config.orchestrator_url}/api/workers/{self.config.worker_id}/result",
+                f"{self.config.orchestrator_url}/api/workers/results",
                 json={
                     "task_id": task_id,
+                    "worker_id": self.config.worker_id,
                     "result": result
                 },
                 timeout=10
@@ -179,19 +235,28 @@ class GroqWorker:
                 time.sleep(self.config.poll_interval)
 
 if __name__ == '__main__':
-    config = WorkerConfig()
-    
-    if not config.api_key:
-        print("❌ GROQ_API_KEY not set in .env.worker.groq")
-        print("\n📝 Para configurar:")
-        print("   1. Obtén key gratis: https://console.groq.com/keys")
-        print("   2. Crea .env.worker.groq con:")
-        print("      GROQ_API_KEY=gsk_tu_key_aqui")
-        print("      WORKER_ID=groq-worker-1")
-        print("      WORKER_TYPE=groq")
-        print("      ORCHESTRATOR_URL=http://localhost:5000")
-        print("      WORKER_POLL_INTERVAL=5")
+    try:
+        # Load configuration from JSON
+        config_data = load_worker_config()
+        config = WorkerConfig.from_json(config_data)
+        
+        if not config.api_key:
+            print("❌ GROQ_API_KEY not found in credentials.json")
+            print(f"\n📝 Config location: {WORKERS_BASE_PATH / 'groq/credentials.json'}")
+            print("   Update the api_key field with your Groq API key")
+            print("   Get key at: https://console.groq.com/keys")
+            exit(1)
+        
+        worker = GroqWorker(config)
+        worker.start()
+        
+    except FileNotFoundError as e:
+        print(f"❌ Configuration error: {e}")
+        print(f"\n📁 Expected structure:")
+        print(f"   {WORKERS_BASE_PATH / 'config.json'}")
+        print(f"   {WORKERS_BASE_PATH / 'groq/worker_config.json'}")
+        print(f"   {WORKERS_BASE_PATH / 'groq/credentials.json'}")
         exit(1)
-    
-    worker = GroqWorker(config)
-    worker.start()
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        exit(1)

@@ -200,7 +200,7 @@ Use Python to execute functions with automatic healing:
 from app.evolution.self_healing import SelfHealingOrchestrator
 from app.agents.coder_agent import CoderAgent
 from app.knowledge.code_vault import CodeVault
-from app.integrations.deepseek_client import DeepSeekClient
+from lib.llm import DeepSeekClient
 
 # Initialize
 deepseek = DeepSeekClient()
