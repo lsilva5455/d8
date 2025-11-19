@@ -18,6 +18,7 @@ from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome
 from app.config import config
 from app.integrations.gemini_client import GeminiClient
+from app.distributed_integration import D8DistributedClient
 import os
 from dotenv import load_dotenv
 
@@ -30,7 +31,21 @@ last_request_time = None
 
 # Initialize Gemini client globally
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+ORCHESTRATOR_URL = os.getenv('ORCHESTRATOR_URL', 'http://localhost:5000')
+
 gemini_client = GeminiClient(api_key=GEMINI_API_KEY, rpm_limit=GEMINI_RPM) if GEMINI_API_KEY else None
+
+# Try to connect to orchestrator as fallback
+distributed_client = None
+if not GEMINI_API_KEY and not GROQ_API_KEY:
+    try:
+        distributed_client = D8DistributedClient(ORCHESTRATOR_URL)
+        print(f"✅ No API keys found, using orchestrator at {ORCHESTRATOR_URL}")
+    except Exception as e:
+        print(f"⚠️ Warning: No API keys and orchestrator unavailable: {e}")
+        print("    Make sure to start orchestrator with: python start_d8.py (option 4)")
+        distributed_client = None
 
 def wait_for_rate_limit():
     """Esperar el intervalo necesario entre requests para respetar rate limits"""
@@ -77,15 +92,43 @@ Remember: NEVER use "Unknown" as niche_name - provide a real, specific niche nam
             
             start_time = time.time()
             
-            # Use Gemini directly
+            # Prioridad 1: Usar Gemini directamente si está disponible
             if gemini_client:
                 result = gemini_client.generate_json(
                     prompt=prompt,
                     temperature=0.3,
                     max_tokens=2500
                 )
+            # Prioridad 2: Usar orquestador distribuido si no hay API
+            elif distributed_client:
+                if progress_bar:
+                    progress_bar.set_postfix_str("Using orchestrator...")
+                
+                response = distributed_client.execute_agent_action(
+                    messages=[{"role": "user", "content": prompt}],
+                    model="llama-3.3-70b",
+                    temperature=0.3,
+                    priority=7,  # Alta prioridad para niche discovery
+                    wait_for_result=True
+                )
+                
+                if response.get("success"):
+                    # Parse JSON from output
+                    output = response.get("output", "")
+                    import json
+                    try:
+                        result = json.loads(output)
+                    except:
+                        # Try to extract JSON from markdown
+                        json_match = re.search(r'```json\s*(\{.*?\})\s*```', output, re.DOTALL)
+                        if json_match:
+                            result = json.loads(json_match.group(1))
+                        else:
+                            result = {"success": False, "error": "Could not parse JSON from orchestrator response"}
+                else:
+                    result = {"success": False, "error": response.get("error", "Orchestrator task failed")}
+            # Prioridad 3: Fallback a Groq via BaseAgent
             else:
-                # Fallback to Groq via BaseAgent
                 result = agent.act({
                     "market_area": market_area,
                     "target_geography": geography

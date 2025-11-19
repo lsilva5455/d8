@@ -354,7 +354,38 @@ def create_orchestrator_app() -> Flask:
     return app
 
 
+def main():
+    """Punto de entrada principal para ejecutar como módulo"""
+    import sys
+    
+    logger.info("="*60)
+    logger.info("🎯 D8 ORCHESTRATOR - Starting...")
+    logger.info("="*60)
+    
+    app = create_orchestrator_app()
+    
+    # Configuración del servidor
+    host = "0.0.0.0"  # Escuchar en todas las interfaces
+    port = 5000
+    
+    logger.info(f"🌐 Orchestrator listening on http://{host}:{port}")
+    logger.info(f"📊 Health check: http://{host}:{port}/health")
+    logger.info(f"📈 Statistics: http://{host}:{port}/api/stats")
+    logger.info("="*60)
+    
+    try:
+        # Iniciar servidor
+        app.run(
+            host=host,
+            port=port,
+            debug=False,
+            threaded=True
+        )
+    except KeyboardInterrupt:
+        logger.info("\n👋 Shutting down orchestrator...")
+        sys.exit(0)
+
+
 if __name__ == '__main__':
     """Ejecutar orchestrator en modo standalone"""
-    app = create_orchestrator_app()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()

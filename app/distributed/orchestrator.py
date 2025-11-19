@@ -182,6 +182,16 @@ class DistributedOrchestrator:
                 }
             }
     
+    def get_task(self, task_id: str) -> Optional[Task]:
+        """Get task by ID"""
+        with self.lock:
+            return self.tasks.get(task_id)
+    
+    def get_workers(self) -> Dict[str, Worker]:
+        """Get all registered workers"""
+        with self.lock:
+            return dict(self.workers)
+    
     def _assignment_loop(self):
         """Background thread that assigns tasks to workers"""
         while self.active:
