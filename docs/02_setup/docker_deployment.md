@@ -24,7 +24,7 @@
 │    - Gestiona cola de tareas            │
 │    - Asigna trabajo a workers           │
 │    - Monitorea heartbeats               │
-│    Puerto: 5000                         │
+│    Puerto: 7001                         │
 └──────────────┬──────────────────────────┘
                │ HTTP
                │
@@ -129,12 +129,12 @@ nano .env
 docker compose --profile orchestrator up -d
 
 # Verificar
-curl http://localhost:5000/health
+curl http://localhost:7001/health
 ```
 
 **Abrir puerto en firewall:**
 ```bash
-sudo ufw allow 5000/tcp
+sudo ufw allow 7001/tcp
 ```
 
 **Obtener IP del orchestrator:**
@@ -159,7 +159,7 @@ cp docker/.env.worker-deepseek.template .env.worker
 nano .env.worker
 
 # Cambiar:
-# ORCHESTRATOR_URL=http://192.168.1.100:5000  <- IP del orchestrator
+# ORCHESTRATOR_URL=http://192.168.1.100:7001  <- IP del orchestrator
 # DEEPSEEK_MODEL=deepseek-coder:6.7b  (o :1.3b para Pi con 4GB)
 
 # Iniciar worker
@@ -181,7 +181,7 @@ cp docker/.env.worker-groq.template .env.worker
 nano .env.worker
 
 # Cambiar:
-# ORCHESTRATOR_URL=http://192.168.1.100:5000
+# ORCHESTRATOR_URL=http://192.168.1.100:7001
 # GROQ_API_KEY=gsk_your_actual_key_here
 
 # Iniciar
@@ -201,7 +201,7 @@ cp docker/.env.worker-gemini.template .env.worker
 nano .env.worker
 
 # Cambiar:
-# ORCHESTRATOR_URL=http://192.168.1.100:5000
+# ORCHESTRATOR_URL=http://192.168.1.100:7001
 # GEMINI_API_KEY=AIza_your_actual_key_here
 
 # Iniciar
@@ -316,13 +316,13 @@ docker exec d8-worker-deepseek ollama rm deepseek-coder:33b
 
 ```bash
 # Desde worker, verificar orchestrator
-curl http://192.168.1.100:5000/health
+curl http://192.168.1.100:7001/health
 
 # Ver workers registrados (desde orchestrator)
-curl http://localhost:5000/api/workers/list
+curl http://localhost:7001/api/workers/list
 
 # Ver tareas pendientes
-curl http://localhost:5000/api/tasks/queue
+curl http://localhost:7001/api/tasks/queue
 ```
 
 ---
@@ -335,8 +335,8 @@ curl http://localhost:5000/api/tasks/queue
 
 **Soluciones:**
 1. Verificar IP del orchestrator: `ping 192.168.1.100`
-2. Verificar puerto abierto: `nc -zv 192.168.1.100 5000`
-3. Verificar firewall: `sudo ufw allow 5000/tcp`
+2. Verificar puerto abierto: `nc -zv 192.168.1.100 7001`
+3. Verificar firewall: `sudo ufw allow 7001/tcp`
 4. Verificar que orchestrator esté corriendo: `docker ps`
 
 ### ❌ Ollama falla al descargar modelo
@@ -457,10 +457,10 @@ sudo systemctl status d8-worker
 
 ```bash
 # Permitir solo red local al orchestrator
-sudo ufw allow from 192.168.1.0/24 to any port 5000
+sudo ufw allow from 192.168.1.0/24 to any port 7001
 
 # Bloquear acceso externo
-sudo ufw deny 5000/tcp
+sudo ufw deny 7001/tcp
 ```
 
 ---

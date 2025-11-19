@@ -19,7 +19,7 @@ def example_1_agent_action():
     print("="*60)
     
     # Conectar al orchestrator
-    client = D8DistributedClient("http://localhost:5000")
+    client = D8DistributedClient("http://localhost:7001")
     
     # Ejecutar acción
     messages = [
@@ -49,7 +49,7 @@ def example_2_evolution():
     print("="*60)
     
     # Crear adapter
-    adapter = DistributedEvolutionAdapter("http://localhost:5000")
+    adapter = DistributedEvolutionAdapter("http://localhost:7001")
     
     # Genomas de ejemplo
     genome1 = {
@@ -81,7 +81,7 @@ def example_3_async_tasks():
     print("EJEMPLO 3: Tareas Asíncronas")
     print("="*60)
     
-    client = D8DistributedClient("http://localhost:5000")
+    client = D8DistributedClient("http://localhost:7001")
     
     # Enviar múltiples tareas
     task_ids = []
@@ -118,7 +118,7 @@ def example_4_monitoring():
     print("EJEMPLO 4: Monitoreo del Sistema")
     print("="*60)
     
-    orchestrator_url = "http://localhost:5000"
+    orchestrator_url = "http://localhost:7001"
     
     # Check health
     print("\n🩺 Verificando salud del sistema...")
@@ -195,7 +195,7 @@ class Darwin:
             return self._local_mutation(genome)
 
 # Uso:
-darwin = Darwin(use_distributed=True, orchestrator_url="http://192.168.1.100:5000")
+darwin = Darwin(use_distributed=True, orchestrator_url="http://192.168.1.100:7001")
 population = darwin.evolve(generations=100)
 
 # Ventaja: Las operaciones genéticas se ejecutan en Raspberry Pi con DeepSeek
@@ -221,7 +221,7 @@ class AutonomousCongress:
         self.use_distributed = use_distributed
         
         if use_distributed:
-            self.distributed_client = D8DistributedClient("http://orchestrator:5000")
+            self.distributed_client = D8DistributedClient("http://orchestrator:7001")
     
     def _research_phase(self, target_system):
         if self.use_distributed:
@@ -260,7 +260,7 @@ def main():
     print("\n")
     
     # Verificar si orchestrator está disponible
-    health = check_distributed_system_health("http://localhost:5000")
+    health = check_distributed_system_health("http://localhost:7001")
     
     if not health["orchestrator_healthy"]:
         print("❌ Orchestrator no disponible. Inicia el orchestrator primero.")

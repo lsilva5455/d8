@@ -10,7 +10,7 @@ This devcontainer configuration automatically sets up a complete development env
 - **All project dependencies** installed from `requirements.txt`
 - **Ollama** local LLM server for DeepSeek evolution engine
 - **DeepSeek-coder:33b model** (downloads in background)
-- **Flask development server** ready to run on port 5000
+- **Flask development server** ready to run on port 7001
 - **VS Code extensions** for Python development (Pylance, Black, GitLens)
 - **Project structure** with all necessary directories
 - **Environment configuration** from `.env.example`
@@ -86,14 +86,14 @@ tail -f /tmp/ollama-pull.log
 python app/main.py
 ```
 
-The Flask server will start on port 5000. GitHub Codespaces automatically forwards this port and provides a URL.
+The Flask server will start on port 7001. GitHub Codespaces automatically forwards this port and provides a URL.
 
 ### Access the API
 
 GitHub Codespaces will show a notification with the forwarded port URL, or you can:
 
 1. Click the **PORTS** tab in VS Code
-2. Find port 5000 (Flask API Server)
+2. Find port 7001 (Flask API Server)
 3. Click the globe icon to open in browser
 4. Or hover and copy the forwarded URL
 
@@ -102,7 +102,7 @@ GitHub Codespaces will show a notification with the forwarded port URL, or you c
 ### Health Check
 
 ```bash
-curl http://localhost:5000/
+curl http://localhost:7001/
 ```
 
 Expected response:
@@ -122,25 +122,25 @@ Expected response:
 ### List Agents
 
 ```bash
-curl http://localhost:5000/api/agents
+curl http://localhost:7001/api/agents
 ```
 
 ### Initialize Population
 
 ```bash
-curl -X POST http://localhost:5000/api/initialize
+curl -X POST http://localhost:7001/api/initialize
 ```
 
 ### Trigger Evolution
 
 ```bash
-curl -X POST http://localhost:5000/api/evolve
+curl -X POST http://localhost:7001/api/evolve
 ```
 
 ### Agent Action
 
 ```bash
-curl -X POST http://localhost:5000/api/agents/<agent_id>/act \
+curl -X POST http://localhost:7001/api/agents/<agent_id>/act \
   -H "Content-Type: application/json" \
   -d '{
     "action_type": "generate_content",
@@ -206,14 +206,14 @@ ollama serve > /tmp/ollama.log 2>&1 &
 tail -f /tmp/ollama.log
 ```
 
-### Port 5000 Already in Use
+### Port 7001 Already in Use
 
-**Issue:** Flask can't start because port 5000 is occupied.
+**Issue:** Flask can't start because port 7001 is occupied.
 
 **Solution:**
 ```bash
-# Find process using port 5000
-lsof -i :5000
+# Find process using port 7001
+lsof -i :7001
 
 # Kill the process (replace PID)
 kill -9 <PID>

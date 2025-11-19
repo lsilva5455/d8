@@ -32,7 +32,7 @@
                    ▼
 ┌─────────────────────────────────────────────────────────┐
 │             ORCHESTRATOR (Coordinador)                  │
-│             Puerto: 5000                                │
+│             Puerto: 7001                                │
 │                                                         │
 │  Responsabilidades:                                     │
 │  ✅ Recibir tareas del sistema principal                │
@@ -202,7 +202,7 @@ Responsabilidades:
 **Responsabilidades:**
 
 1. **📥 Recepción de Tareas**
-   - Escucha en `0.0.0.0:5000`
+   - Escucha en `0.0.0.0:7001`
    - Endpoint: `POST /api/tasks/submit`
    - Valida formato de tareas
    - Genera UUID para cada tarea
@@ -323,7 +323,7 @@ Responsabilidades:
      ```python
      from app.distributed_integration import DistributedEvolutionAdapter
      
-     adapter = DistributedEvolutionAdapter("http://orchestrator:5000")
+     adapter = DistributedEvolutionAdapter("http://orchestrator:7001")
      offspring = adapter.crossover(parent1.genome, parent2.genome)
      ```
 
@@ -564,7 +564,7 @@ Response:
 from app.distributed_integration import D8DistributedClient
 
 # Conectar
-client = D8DistributedClient("http://192.168.1.100:5000")
+client = D8DistributedClient("http://192.168.1.100:7001")
 
 # Ejecutar tarea
 result = client.execute_agent_action(
@@ -585,7 +585,7 @@ from app.distributed_integration import DistributedEvolutionAdapter
 class Darwin:
     def __init__(self, use_distributed=True):
         if use_distributed:
-            self.adapter = DistributedEvolutionAdapter("http://orchestrator:5000")
+            self.adapter = DistributedEvolutionAdapter("http://orchestrator:7001")
     
     def evolve(self, population):
         # Crossover distribuido

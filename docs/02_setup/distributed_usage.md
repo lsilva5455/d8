@@ -21,7 +21,7 @@ El sistema distribuido D8 permite ejecutar el **orquestador** (servidor central)
            │ HTTP POST /api/tasks/submit
            ▼
 ┌─────────────────────┐
-│   ORCHESTRATOR      │ ← Puerto 5000
+│   ORCHESTRATOR      │ ← Puerto 7001
 │  (Servidor Central) │
 └──────────┬──────────┘
            │ HTTP GET /api/workers/{id}/tasks
@@ -45,11 +45,11 @@ python start_d8.py
 # Seleccionar opción 4: Orchestrator
 ```
 
-El orchestrator escuchará en `http://localhost:5000`
+El orchestrator escuchará en `http://localhost:7001`
 
 **Verificar:**
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:7001/health
 # Respuesta: {"status": "healthy", "service": "d8-orchestrator", ...}
 ```
 
@@ -114,7 +114,7 @@ GEMINI_API_KEY=tu_api_key_aqui
 GROQ_API_KEY=tu_api_key_aqui
 
 # Orchestrator URL (si está en otra máquina)
-ORCHESTRATOR_URL=http://192.168.1.100:5000
+ORCHESTRATOR_URL=http://192.168.1.100:7001
 ```
 
 ### Prioridades de Tareas
@@ -138,7 +138,7 @@ response = distributed_client.execute_agent_action(
 ### Ver Estadísticas del Orchestrator
 
 ```bash
-curl http://localhost:5000/api/stats
+curl http://localhost:7001/api/stats
 ```
 
 **Respuesta:**
@@ -171,13 +171,13 @@ curl http://localhost:5000/api/stats
 ### Ver Workers Registrados
 
 ```bash
-curl http://localhost:5000/api/workers/list
+curl http://localhost:7001/api/workers/list
 ```
 
 ### Ver Estado de una Tarea
 
 ```bash
-curl http://localhost:5000/api/tasks/status/{task_id}
+curl http://localhost:7001/api/tasks/status/{task_id}
 ```
 
 ---
@@ -191,11 +191,11 @@ curl http://localhost:5000/api/tasks/status/{task_id}
 **Solución:**
 1. Verificar que orchestrator está corriendo:
    ```bash
-   curl http://localhost:5000/health
+   curl http://localhost:7001/health
    ```
 2. Si orchestrator está en otra máquina, verificar URL en `.env`:
    ```bash
-   ORCHESTRATOR_URL=http://192.168.1.100:5000
+   ORCHESTRATOR_URL=http://192.168.1.100:7001
    ```
 
 ### Error: "No workers available"
@@ -206,7 +206,7 @@ curl http://localhost:5000/api/tasks/status/{task_id}
 1. Levantar al menos un worker (opciones 5, 6 o 7 en `start_d8.py`)
 2. Verificar que el worker se registró:
    ```bash
-   curl http://localhost:5000/api/workers/list
+   curl http://localhost:7001/api/workers/list
    ```
 
 ### Worker no procesa tareas
@@ -225,7 +225,7 @@ curl http://localhost:5000/api/tasks/status/{task_id}
 **Solución:**
 1. Verificar que hay workers online:
    ```bash
-   curl http://localhost:5000/api/stats
+   curl http://localhost:7001/api/stats
    ```
 2. Verificar que los workers tienen capacidad para el tipo de tarea
 3. Verificar logs del orchestrator

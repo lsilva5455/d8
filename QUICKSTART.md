@@ -76,7 +76,7 @@ chmod +x scripts/setup/setup_worker.sh
 
 **El script preguntará:**
 1. Tipo de worker → Seleccionar `1` (DeepSeek)
-2. URL del orchestrator → Ingresar `http://192.168.1.X:5000` (IP del paso 1)
+2. URL del orchestrator → Ingresar `http://192.168.1.X:7001` (IP del paso 1)
 
 **⚠️ Primera ejecución:** Descarga del modelo DeepSeek (~4GB) tarda 10-30 min.
 
@@ -159,11 +159,11 @@ make start-worker-gemini
 
 ```bash
 # Verificar orchestrator está corriendo
-curl http://192.168.1.X:5000/health
+curl http://192.168.1.X:7001/health
 
 # Verificar conectividad desde worker
 ping 192.168.1.X
-nc -zv 192.168.1.X 5000
+nc -zv 192.168.1.X 7001
 
 # Ver logs del worker
 docker logs d8-worker-deepseek
@@ -201,7 +201,7 @@ docker logs -f d8-worker-deepseek
 
 ```
 ┌─────────────────────────────────────────┐
-│    ORCHESTRATOR (Puerto 5000)           │
+│    ORCHESTRATOR (Puerto 7001)           │
 │    - Gestiona cola de tareas            │
 │    - Distribuye trabajo                 │
 │    - Monitorea workers (heartbeat)      │
@@ -258,10 +258,10 @@ Ollama es un servidor que expone modelos LLM vía API REST:
 
 ```bash
 # Listar modelos
-curl http://localhost:11434/api/tags
+curl http://localhost:7100/api/tags
 
 # Generar texto
-curl http://localhost:11434/api/generate -d '{
+curl http://localhost:7100/api/generate -d '{
   "model": "deepseek-coder:6.7b",
   "prompt": "print hello world in python"
 }'

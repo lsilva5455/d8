@@ -99,7 +99,7 @@ if [ $# -eq 0 ]; then
     esac
     
     echo ""
-    read -p "URL del Orchestrator (ej: http://192.168.1.100:5000): " ORCHESTRATOR_URL
+    read -p "URL del Orchestrator (ej: http://192.168.1.100:7001): " ORCHESTRATOR_URL
     
     # Build command
     CMD="python3 scripts/setup/setup_worker.py --type $WORKER_TYPE --orchestrator $ORCHESTRATOR_URL"

@@ -54,7 +54,7 @@ build-worker-deepseek: ## Construir imagen worker DeepSeek
 start-orchestrator: ## Iniciar orchestrator
 	@echo "🚀 Iniciando orchestrator..."
 	$(COMPOSE) --profile $(ORCHESTRATOR_PROFILE) up -d
-	@echo "✅ Orchestrator corriendo en http://localhost:5000"
+	@echo "✅ Orchestrator corriendo en http://localhost:7001"
 
 start-worker-groq: ## Iniciar worker Groq
 	@echo "🚀 Iniciando worker Groq..."
@@ -122,11 +122,11 @@ ps: status ## Alias para status
 
 check-health: ## Verificar health checks
 	@echo "🩺 Verificando health del orchestrator..."
-	@curl -s http://localhost:5000/health | jq . || echo "❌ Orchestrator no responde"
+	@curl -s http://localhost:7001/health | jq . || echo "❌ Orchestrator no responde"
 
 check-workers: ## Verificar workers registrados
 	@echo "🤖 Workers registrados:"
-	@curl -s http://localhost:5000/api/workers/list | jq . || echo "❌ No se puede conectar al orchestrator"
+	@curl -s http://localhost:7001/api/workers/list | jq . || echo "❌ No se puede conectar al orchestrator"
 
 stats: ## Mostrar uso de recursos
 	docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
@@ -163,7 +163,7 @@ update: ## Actualizar imágenes y recrear containers
 
 test-connection: ## Probar conexión orchestrator -> worker
 	@echo "🧪 Probando conectividad..."
-	@docker exec d8-orchestrator curl -s http://localhost:5000/health || echo "❌ Orchestrator no responde"
+	@docker exec d8-orchestrator curl -s http://localhost:7001/health || echo "❌ Orchestrator no responde"
 
 shell-orchestrator: ## Abrir shell en orchestrator
 	docker exec -it d8-orchestrator /bin/bash

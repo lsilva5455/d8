@@ -75,7 +75,7 @@ docker build -f docker/Dockerfile.worker-deepseek -t d8-worker-deepseek .
 
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `ORCHESTRATOR_URL` | URL del coordinador | `http://192.168.1.100:5000` |
+| `ORCHESTRATOR_URL` | URL del coordinador | `http://192.168.1.100:7001` |
 | `WORKER_TYPE` | Tipo de worker | `groq`, `gemini`, `deepseek` |
 | `WORKER_ID` | ID único del worker | Auto-generado si se omite |
 | `POLL_INTERVAL` | Segundos entre polling | `5` para cloud, `10` para local |
@@ -99,8 +99,8 @@ GEMINI_MODEL=gemini-2.0-flash-exp
 #### DeepSeek
 ```bash
 DEEPSEEK_MODEL=deepseek-coder:6.7b
-OLLAMA_HOST=0.0.0.0:11434
-DEEPSEEK_BASE_URL=http://localhost:11434
+OLLAMA_HOST=0.0.0.0:7100
+DEEPSEEK_BASE_URL=http://localhost:7100
 ```
 
 ---
@@ -153,7 +153,7 @@ Todos los containers tienen health checks configurados:
 
 ### Orchestrator
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:7001/health
 ```
 
 ### Workers
@@ -164,7 +164,7 @@ curl http://localhost:8080/health
 ### DeepSeek (Ollama + Worker)
 ```bash
 # Ollama
-curl http://localhost:11434/api/tags
+curl http://localhost:7100/api/tags
 
 # Worker
 curl http://localhost:8080/health

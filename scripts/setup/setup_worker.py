@@ -6,8 +6,8 @@ Configura automáticamente un nodo worker de D8 en cualquier máquina Linux.
 Especializado para Raspberry Pi 4 con DeepSeek, pero soporta otros tipos.
 
 Uso:
-    python setup_worker.py --type deepseek --orchestrator http://192.168.1.100:5000
-    python setup_worker.py --type groq --api-key gsk_xxx --orchestrator http://192.168.1.100:5000
+    python setup_worker.py --type deepseek --orchestrator http://192.168.1.100:7001
+    python setup_worker.py --type groq --api-key gsk_xxx --orchestrator http://192.168.1.100:7001
 """
 
 import os
@@ -164,7 +164,7 @@ def create_env_file(worker_type: str, orchestrator_url: str, api_key: Optional[s
     
     # Replace placeholders
     content = content.replace(
-        'ORCHESTRATOR_URL=http://192.168.1.100:5000',
+        'ORCHESTRATOR_URL=http://192.168.1.100:7001',
         f'ORCHESTRATOR_URL={orchestrator_url}'
     )
     
@@ -289,13 +289,13 @@ def main():
         epilog="""
 Ejemplos:
   # Worker DeepSeek en Raspberry Pi 4
-  python setup_worker.py --type deepseek --orchestrator http://192.168.1.100:5000
+  python setup_worker.py --type deepseek --orchestrator http://192.168.1.100:7001
   
   # Worker Groq (requiere API key)
-  python setup_worker.py --type groq --api-key gsk_xxx --orchestrator http://192.168.1.100:5000
+  python setup_worker.py --type groq --api-key gsk_xxx --orchestrator http://192.168.1.100:7001
   
   # Worker Gemini
-  python setup_worker.py --type gemini --api-key AIza_xxx --orchestrator http://192.168.1.100:5000
+  python setup_worker.py --type gemini --api-key AIza_xxx --orchestrator http://192.168.1.100:7001
 """
     )
     
@@ -309,7 +309,7 @@ Ejemplos:
     parser.add_argument(
         '--orchestrator',
         required=True,
-        help='URL del orchestrator (ej: http://192.168.1.100:5000)'
+        help='URL del orchestrator (ej: http://192.168.1.100:7001)'
     )
     
     parser.add_argument(

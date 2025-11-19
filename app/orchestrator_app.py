@@ -366,7 +366,7 @@ def main():
     
     # Configuración del servidor
     host = "0.0.0.0"  # Escuchar en todas las interfaces
-    port = 5000
+    port = 7001
     
     logger.info(f"🌐 Orchestrator listening on http://{host}:{port}")
     logger.info(f"📊 Health check: http://{host}:{port}/health")

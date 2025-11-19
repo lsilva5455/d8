@@ -23,7 +23,7 @@ WORKERS_BASE_PATH = D8_DATA_PATH / "workers"
 class APIConfig:
     """API Keys and endpoints"""
     groq_api_key: str
-    deepseek_base_url: str = "http://localhost:11434"
+    deepseek_base_url: str = "http://localhost:7100"
     deepseek_model: str = "deepseek-coder:33b"
 
 
@@ -174,7 +174,7 @@ class FlaskConfig:
     """Flask server settings"""
     flask_env: str = "development"
     flask_debug: bool = True
-    flask_port: int = 5000
+    flask_port: int = 7001
 
 
 class Config:
@@ -192,7 +192,7 @@ class Config:
             
         self.api = APIConfig(
             groq_api_key=groq_key,
-            deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "http://localhost:11434"),
+            deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "http://localhost:7100"),
             deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-coder:33b")
         )
         
@@ -248,7 +248,7 @@ class Config:
         self.flask = FlaskConfig(
             flask_env=os.getenv("FLASK_ENV", "development"),
             flask_debug=os.getenv("FLASK_DEBUG", "True").lower() == "true",
-            flask_port=int(os.getenv("FLASK_PORT", 5000))
+            flask_port=int(os.getenv("FLASK_PORT", 7001))
         )
         
         # Congress Configuration

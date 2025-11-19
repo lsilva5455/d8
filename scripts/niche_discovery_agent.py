@@ -32,7 +32,7 @@ last_request_time = None
 # Initialize Gemini client globally
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-ORCHESTRATOR_URL = os.getenv('ORCHESTRATOR_URL', 'http://localhost:5000')
+ORCHESTRATOR_URL = os.getenv('ORCHESTRATOR_URL', 'http://localhost:7001')
 
 gemini_client = GeminiClient(api_key=GEMINI_API_KEY, rpm_limit=GEMINI_RPM) if GEMINI_API_KEY else None
 

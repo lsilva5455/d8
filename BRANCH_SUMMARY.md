@@ -92,7 +92,7 @@ Dockerizar el sistema D8 para deployment distribuido de workers, con enfoque esp
 ```
 ┌─────────────────────────────────────────┐
 │         ORCHESTRATOR (Flask)            │
-│    Puerto: 5000                         │
+│    Puerto: 7001                         │
 │    - Gestiona cola de tareas            │
 │    - Asigna trabajo a workers           │
 │    - Monitorea heartbeats               │

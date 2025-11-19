@@ -22,7 +22,7 @@ class D8DistributedClient:
     Cliente para interactuar con el orchestrator desde D8
     
     Uso:
-        client = D8DistributedClient("http://192.168.1.100:5000")
+        client = D8DistributedClient("http://192.168.1.100:7001")
         
         # Ejecutar acción de agente de forma distribuida
         result = client.execute_agent_action(
@@ -251,7 +251,7 @@ class DistributedEvolutionAdapter:
     Uso en darwin.py:
         from app.distributed_integration import DistributedEvolutionAdapter
         
-        adapter = DistributedEvolutionAdapter("http://orchestrator:5000")
+        adapter = DistributedEvolutionAdapter("http://orchestrator:7001")
         
         # En lugar de:
         # offspring = self._crossover_local(parent1, parent2)
@@ -324,7 +324,7 @@ def create_distributed_client(orchestrator_url: Optional[str] = None) -> D8Distr
     import os
     
     if orchestrator_url is None:
-        orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:5000")
+        orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:7001")
     
     return D8DistributedClient(orchestrator_url)
 
