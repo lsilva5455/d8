@@ -86,6 +86,12 @@ class DistributedOrchestrator:
                 del self.workers[worker_id]
                 logger.info(f"👋 Worker unregistered: {worker_id}")
     
+    def update_heartbeat(self, worker_id: str):
+        """Update worker heartbeat timestamp"""
+        with self.lock:
+            if worker_id in self.workers:
+                self.workers[worker_id].last_heartbeat = time.time()
+    
     def submit_task(self, task_type: str, task_data: Dict[str, Any], priority: int = 5) -> str:
         """Submit task to queue"""
         task_id = str(uuid.uuid4())
