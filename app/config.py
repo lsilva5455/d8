@@ -76,6 +76,37 @@ class LoggingConfig:
 
 
 @dataclass
+class CongressConfig:
+    """Congress system settings"""
+    # Supreme Council
+    council_size: int = 7
+    council_voting_threshold: float = 0.66  # Supermajority
+    
+    # Committee sizes
+    niche_discovery_size: int = 7
+    competitive_intelligence_size: int = 4
+    technology_research_size: int = 3
+    monetization_optimization_size: int = 3
+    content_execution_size: int = 5
+    operations_size: int = 3
+    
+    # Discovery settings
+    discovery_frequency_hours: int = 6
+    discovery_candidates_per_cycle: int = 10
+    deep_analysis_batch_size: int = 3
+    
+    # Voting thresholds
+    simple_majority_threshold: float = 0.51
+    supermajority_threshold: float = 0.66
+    qualified_majority_threshold: float = 0.75
+    
+    # API keys for data sources
+    google_trends_api_key: Optional[str] = None
+    reddit_client_id: Optional[str] = None
+    reddit_client_secret: Optional[str] = None
+
+
+@dataclass
 class FlaskConfig:
     """Flask server settings"""
     flask_env: str = "development"
@@ -155,6 +186,24 @@ class Config:
             flask_env=os.getenv("FLASK_ENV", "development"),
             flask_debug=os.getenv("FLASK_DEBUG", "True").lower() == "true",
             flask_port=int(os.getenv("FLASK_PORT", 5000))
+        )
+        
+        # Congress Configuration
+        self.congress = CongressConfig(
+            council_size=int(os.getenv("COUNCIL_SIZE", 7)),
+            council_voting_threshold=float(os.getenv("COUNCIL_VOTING_THRESHOLD", 0.66)),
+            niche_discovery_size=int(os.getenv("NICHE_DISCOVERY_SIZE", 7)),
+            competitive_intelligence_size=int(os.getenv("COMPETITIVE_INTELLIGENCE_SIZE", 4)),
+            technology_research_size=int(os.getenv("TECHNOLOGY_RESEARCH_SIZE", 3)),
+            monetization_optimization_size=int(os.getenv("MONETIZATION_OPTIMIZATION_SIZE", 3)),
+            content_execution_size=int(os.getenv("CONTENT_EXECUTION_SIZE", 5)),
+            operations_size=int(os.getenv("OPERATIONS_SIZE", 3)),
+            discovery_frequency_hours=int(os.getenv("DISCOVERY_FREQUENCY_HOURS", 6)),
+            discovery_candidates_per_cycle=int(os.getenv("DISCOVERY_CANDIDATES_PER_CYCLE", 10)),
+            deep_analysis_batch_size=int(os.getenv("DEEP_ANALYSIS_BATCH_SIZE", 3)),
+            google_trends_api_key=os.getenv("GOOGLE_TRENDS_API_KEY"),
+            reddit_client_id=os.getenv("REDDIT_CLIENT_ID"),
+            reddit_client_secret=os.getenv("REDDIT_CLIENT_SECRET")
         )
     
     def _load_agent_config(self) -> None:

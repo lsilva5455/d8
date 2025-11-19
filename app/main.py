@@ -52,12 +52,18 @@ def index():
     return jsonify({
         "status": "online",
         "project": "The Hive",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "population_size": len(population),
         "d8_genesis": {
             "code_vault_ready": code_vault is not None,
             "coder_agent_ready": coder_agent is not None,
             "healer_ready": healer is not None
+        },
+        "congress_system": {
+            "supreme_council_ready": supreme_council is not None,
+            "niche_discovery_ready": niche_discovery_committee is not None,
+            "discovery_engine_ready": discovery_engine is not None,
+            "roi_tracker_ready": roi_tracker is not None
         },
         "endpoints": {
             "/": "This health check",
@@ -67,7 +73,11 @@ def index():
             "/api/genesis/ingest": "Ingest legacy code",
             "/api/genesis/generate": "Generate polymorphic code",
             "/api/genesis/heal": "Self-heal broken code",
-            "/api/genesis/stats": "D8-GENESIS statistics"
+            "/api/genesis/stats": "D8-GENESIS statistics",
+            "/api/congress/status": "Congress system status",
+            "/api/congress/council/*": "Supreme Council endpoints",
+            "/api/congress/discovery/*": "Niche Discovery endpoints",
+            "/api/congress/roi/*": "ROI Tracking endpoints"
         }
     })
 
@@ -324,10 +334,304 @@ def genesis_stats():
 # ==================== END D8-GENESIS ENDPOINTS ====================
 
 
+# ==================== CONGRESS SYSTEM ENDPOINTS ====================
+
+# Global Congress components
+supreme_council = None
+niche_discovery_committee = None
+roi_tracker = None
+discovery_engine = None
+
+
+@app.route('/api/congress/status', methods=['GET'])
+def congress_status():
+    """Get overall Congress system status"""
+    global supreme_council, niche_discovery_committee, roi_tracker, discovery_engine
+    
+    return jsonify({
+        "status": "active",
+        "components": {
+            "supreme_council": supreme_council is not None,
+            "niche_discovery": niche_discovery_committee is not None,
+            "roi_tracker": roi_tracker is not None,
+            "discovery_engine": discovery_engine is not None
+        },
+        "endpoints": {
+            "council": "/api/congress/council/*",
+            "discovery": "/api/congress/discovery/*",
+            "roi": "/api/congress/roi/*"
+        }
+    })
+
+
+@app.route('/api/congress/council/members', methods=['GET'])
+def get_council_members():
+    """Get Supreme Council members"""
+    global supreme_council
+    
+    if not supreme_council:
+        return jsonify({"error": "Supreme Council not initialized"}), 500
+    
+    return jsonify({
+        "members": list(supreme_council.council_members.values()),
+        "total": len(supreme_council.council_members),
+        "capacity": supreme_council.council_size
+    })
+
+
+@app.route('/api/congress/council/decisions', methods=['GET'])
+def get_council_decisions():
+    """Get recent council decisions"""
+    global supreme_council
+    
+    if not supreme_council:
+        return jsonify({"error": "Supreme Council not initialized"}), 500
+    
+    limit = request.args.get('limit', 10, type=int)
+    decisions = supreme_council.get_recent_decisions(limit)
+    
+    return jsonify({
+        "decisions": [
+            {
+                "decision_id": d.decision_id,
+                "title": d.title,
+                "type": d.decision_type.value,
+                "passed": d.passed,
+                "votes_for": d.votes_for,
+                "votes_against": d.votes_against,
+                "decided_at": d.decided_at
+            }
+            for d in decisions
+        ],
+        "total": len(decisions)
+    })
+
+
+@app.route('/api/congress/council/okrs', methods=['GET'])
+def get_council_okrs():
+    """Get active OKRs"""
+    global supreme_council
+    
+    if not supreme_council:
+        return jsonify({"error": "Supreme Council not initialized"}), 500
+    
+    active_okrs = [okr for okr in supreme_council.okrs if okr.status == "active"]
+    
+    return jsonify({
+        "okrs": [
+            {
+                "okr_id": okr.okr_id,
+                "quarter": okr.quarter,
+                "objective": okr.objective,
+                "key_results": okr.key_results,
+                "owner": okr.owner,
+                "progress": okr.progress,
+                "created_at": okr.created_at
+            }
+            for okr in active_okrs
+        ],
+        "total": len(active_okrs)
+    })
+
+
+@app.route('/api/congress/council/stats', methods=['GET'])
+def get_council_stats():
+    """Get council statistics"""
+    global supreme_council
+    
+    if not supreme_council:
+        return jsonify({"error": "Supreme Council not initialized"}), 500
+    
+    return jsonify(supreme_council.get_council_stats())
+
+
+@app.route('/api/congress/discovery/candidates', methods=['GET'])
+def get_discovery_candidates():
+    """Get niche discovery candidates"""
+    global niche_discovery_committee
+    
+    if not niche_discovery_committee:
+        return jsonify({"error": "Niche Discovery Committee not initialized"}), 500
+    
+    status = request.args.get('status', None)
+    
+    candidates = list(niche_discovery_committee.candidates.values())
+    
+    if status:
+        candidates = [c for c in candidates if c.status == status]
+    
+    return jsonify({
+        "candidates": [
+            {
+                "niche_id": c.niche_id,
+                "name": c.name,
+                "description": c.description,
+                "source": c.source,
+                "keywords": c.keywords,
+                "status": c.status,
+                "initial_score": c.initial_score
+            }
+            for c in candidates
+        ],
+        "total": len(candidates)
+    })
+
+
+@app.route('/api/congress/discovery/validated', methods=['GET'])
+def get_validated_niches():
+    """Get validated niches"""
+    global niche_discovery_committee
+    
+    if not niche_discovery_committee:
+        return jsonify({"error": "Niche Discovery Committee not initialized"}), 500
+    
+    validated_ids = niche_discovery_committee.validated_niches
+    validated = [
+        niche_discovery_committee.candidates[nid]
+        for nid in validated_ids
+        if nid in niche_discovery_committee.candidates
+    ]
+    
+    return jsonify({
+        "validated_niches": [
+            {
+                "niche_id": c.niche_id,
+                "name": c.name,
+                "description": c.description,
+                "keywords": c.keywords,
+                "monetization_potential": c.monetization_potential
+            }
+            for c in validated
+        ],
+        "total": len(validated)
+    })
+
+
+@app.route('/api/congress/discovery/stats', methods=['GET'])
+def get_discovery_stats():
+    """Get niche discovery statistics"""
+    global niche_discovery_committee, discovery_engine
+    
+    if not niche_discovery_committee:
+        return jsonify({"error": "Niche Discovery Committee not initialized"}), 500
+    
+    committee_stats = niche_discovery_committee.get_discovery_stats()
+    
+    engine_stats = {}
+    if discovery_engine:
+        engine_stats = discovery_engine.get_discovery_stats()
+    
+    return jsonify({
+        "committee": committee_stats,
+        "engine": engine_stats
+    })
+
+
+@app.route('/api/congress/roi/summary', methods=['GET'])
+def get_roi_summary():
+    """Get comprehensive ROI summary"""
+    global roi_tracker
+    
+    if not roi_tracker:
+        return jsonify({"error": "ROI Tracker not initialized"}), 500
+    
+    return jsonify(roi_tracker.get_roi_summary())
+
+
+@app.route('/api/congress/roi/niche/<niche_id>', methods=['GET'])
+def get_niche_roi(niche_id: str):
+    """Get ROI history for a specific niche"""
+    global roi_tracker
+    
+    if not roi_tracker:
+        return jsonify({"error": "ROI Tracker not initialized"}), 500
+    
+    limit = request.args.get('limit', 30, type=int)
+    history = roi_tracker.get_niche_roi_history(niche_id, limit)
+    
+    return jsonify({
+        "niche_id": niche_id,
+        "history": [
+            {
+                "roi_percentage": m.roi_percentage,
+                "revenue": m.revenue,
+                "costs": m.costs,
+                "calculated_at": m.calculated_at
+            }
+            for m in history
+        ],
+        "total": len(history)
+    })
+
+
+@app.route('/api/congress/roi/agent/<agent_id>', methods=['GET'])
+def get_agent_roi(agent_id: str):
+    """Get ROI history for a specific agent"""
+    global roi_tracker
+    
+    if not roi_tracker:
+        return jsonify({"error": "ROI Tracker not initialized"}), 500
+    
+    limit = request.args.get('limit', 30, type=int)
+    history = roi_tracker.get_agent_roi_history(agent_id, limit)
+    
+    return jsonify({
+        "agent_id": agent_id,
+        "history": [
+            {
+                "roi_percentage": m.roi_percentage,
+                "revenue": m.revenue,
+                "costs": m.costs,
+                "calculated_at": m.calculated_at
+            }
+            for m in history
+        ],
+        "total": len(history)
+    })
+
+
+@app.route('/api/congress/roi/top-niches', methods=['GET'])
+def get_top_niches():
+    """Get top performing niches"""
+    global roi_tracker
+    
+    if not roi_tracker:
+        return jsonify({"error": "ROI Tracker not initialized"}), 500
+    
+    limit = request.args.get('limit', 10, type=int)
+    top_niches = roi_tracker.get_top_performing_niches(limit)
+    
+    return jsonify({
+        "top_niches": top_niches,
+        "total": len(top_niches)
+    })
+
+
+@app.route('/api/congress/roi/top-agents', methods=['GET'])
+def get_top_agents():
+    """Get top performing agents"""
+    global roi_tracker
+    
+    if not roi_tracker:
+        return jsonify({"error": "ROI Tracker not initialized"}), 500
+    
+    limit = request.args.get('limit', 10, type=int)
+    top_agents = roi_tracker.get_top_performing_agents(limit)
+    
+    return jsonify({
+        "top_agents": top_agents,
+        "total": len(top_agents)
+    })
+
+
+# ==================== END CONGRESS SYSTEM ENDPOINTS ====================
+
+
 def initialize_hive():
     """Initialize the hive with starting population"""
     global population, evolution_engine, orchestrator_evo
     global code_vault, coder_agent, healer
+    global supreme_council, niche_discovery_committee, roi_tracker, discovery_engine
     
     logger.info("🐝 Initializing The Hive...")
     
@@ -360,6 +664,45 @@ def initialize_hive():
         code_vault = None
         coder_agent = None
         healer = None
+    
+    # Initialize Congress System
+    logger.info("🏛️ Initializing Congress System...")
+    try:
+        from app.congress.supreme_council import SupremeCouncil
+        from app.congress.niche_discovery.committee import NicheDiscoveryCommittee
+        from app.congress.niche_discovery.discovery_engine import DiscoveryEngine
+        from app.metrics.roi_tracker import ROITracker
+        
+        # Initialize Supreme Council
+        supreme_council = SupremeCouncil(
+            council_size=config.congress.council_size,
+            voting_threshold=config.congress.council_voting_threshold
+        )
+        
+        # Initialize Niche Discovery Committee
+        niche_discovery_committee = NicheDiscoveryCommittee()
+        
+        # Initialize Discovery Engine
+        discovery_engine = DiscoveryEngine(
+            discovery_frequency_hours=config.congress.discovery_frequency_hours,
+            candidates_per_cycle=config.congress.discovery_candidates_per_cycle,
+            deep_analysis_batch_size=config.congress.deep_analysis_batch_size
+        )
+        
+        # Initialize ROI Tracker
+        roi_tracker = ROITracker()
+        
+        logger.info("✅ Congress System initialized successfully")
+        logger.info(f"   - Supreme Council: {supreme_council.council_size} members")
+        logger.info(f"   - Niche Discovery: Ready for 24/7 operation")
+        logger.info(f"   - ROI Tracker: Multi-level tracking enabled")
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Congress System initialization failed (non-critical): {e}")
+        supreme_council = None
+        niche_discovery_committee = None
+        discovery_engine = None
+        roi_tracker = None
     
     # Create initial population with diverse prompts
     initial_prompts = [
