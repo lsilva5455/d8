@@ -6,6 +6,9 @@ Free tier: 1500 requests/day, 1M tokens/min
 import google.generativeai as genai
 from typing import List, Dict, Optional
 import logging
+import json
+import time
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +19,25 @@ class GeminiClient:
     Free for Raspberry Pi deployment
     """
     
-    def __init__(self, api_key: str, model: str = "gemini-2.0-flash-exp"):
+    def __init__(self, api_key: str, model: str = "gemini-2.0-flash-exp", rpm_limit: int = 15):
         """
         Initialize Gemini client
         
         Models:
-        - gemini-2.0-flash-exp: Latest, fastest, FREE
-        - gemini-1.5-flash: Stable, fast, FREE
-        - gemini-1.5-pro: More capable, FREE (lower limits)
+        - gemini-2.0-flash-exp: Latest, fastest, FREE (15 RPM)
+        - gemini-1.5-flash: Stable, fast, FREE (15 RPM)
+        - gemini-1.5-pro: More capable, FREE (2 RPM)
+        
+        Args:
+            rpm_limit: Requests per minute limit (default 15 for free tier)
         """
         genai.configure(api_key=api_key)
         self.model_name = model
         self.model = genai.GenerativeModel(model)
-        logger.info(f"🤖 Gemini client initialized: {model}")
+        self.rpm_limit = rpm_limit
+        self.min_interval = 60.0 / rpm_limit  # Seconds between requests
+        self.last_request_time = None
+        logger.info(f"🤖 Gemini client initialized: {model} (Rate: {rpm_limit} RPM, interval: {self.min_interval:.1f}s)")
     
     def chat(
         self,
@@ -49,6 +58,8 @@ class GeminiClient:
         Returns:
             Generated text
         """
+        self._wait_for_rate_limit()
+        
         try:
             # Convert messages to Gemini format
             chat = self.model.start_chat(history=[])
@@ -113,6 +124,56 @@ class GeminiClient:
             
         except Exception as e:
             logger.error(f"Gemini generation error: {e}")
+            raise
+    
+    def generate_json(
+        self,
+        prompt: str,
+        temperature: float = 0.4,
+        max_tokens: int = 2500
+    ) -> dict:
+        """
+        Generate structured JSON output
+        
+        Args:
+            prompt: Input text (should request JSON)
+            temperature: 0.0-2.0 (lower for more structured)
+            max_tokens: Max response length
+            
+        Returns:
+            Parsed JSON dict
+        """
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_tokens,
+                    response_mime_type="application/json"  # Force JSON mode
+                )
+            )
+            
+            # Parse JSON response
+            return json.loads(response.text)
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {e}")
+            logger.error(f"Raw response: {response.text}")
+            
+            # Try to extract JSON from response
+            import re
+            first_brace = response.text.find('{')
+            last_brace = response.text.rfind('}')
+            if first_brace != -1 and last_brace != -1:
+                try:
+                    return json.loads(response.text[first_brace:last_brace+1])
+                except:
+                    pass
+            
+            raise
+            
+        except Exception as e:
+            logger.error(f"Gemini JSON generation error: {e}")
             raise
 
 

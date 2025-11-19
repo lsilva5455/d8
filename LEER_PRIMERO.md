@@ -19,6 +19,60 @@
 
 ---
 
+## 🚫 REGLA CRÍTICA: PROHIBIDO CREAR ARCHIVOS EN LA RAÍZ
+
+### ⛔ **NO CREAR ARCHIVOS EN LA RAÍZ DEL PROYECTO**
+
+**ESTA ES UNA REGLA ABSOLUTA. SIN EXCEPCIONES.**
+
+❌ **PROHIBIDO crear archivos en `c:\Users\PcDos\d8\` directamente**
+
+✅ **OBLIGATORIO usar directorios organizados:**
+- **`docs/`** → Toda documentación, reportes, guías
+- **`scripts/`** → Scripts ejecutables, tests, configuración
+- **`data/`** → Datos generados, resultados, experimentos
+- **`app/`** → Código de la aplicación
+- **`lib/`** → Librerías reutilizables
+
+### 📂 Dónde colocar CADA tipo de archivo
+
+| Tipo de Archivo | Ubicación Correcta | Ejemplo |
+|-----------------|-------------------|---------|
+| 📄 Documentación/Reportes | `docs/07_reportes/` | `docs/07_reportes/test_results.md` |
+| 🔧 Scripts de configuración | `scripts/setup/` | `scripts/setup/configure_api.py` |
+| 🚀 Scripts de lanzamiento | `scripts/launch/` | `scripts/launch/start_worker.py` |
+| 🧪 Scripts de testing | `scripts/tests/` | `scripts/tests/test_integration.py` |
+| 📊 Resultados/Datos | `data/test_results/` | `data/test_results/niche_analysis.json` |
+| 📈 Métricas | `data/metrics/` | `data/metrics/performance.json` |
+| 🧬 Genomas | `data/genomes/` | `data/genomes/agent_v1.json` |
+| 🏛️ Experimentos congreso | `data/congress_experiments/` | `data/congress_experiments/cycle_001.json` |
+| 📚 Conocimiento | `docs/06_knowledge_base/` | `docs/06_knowledge_base/memoria/...` |
+
+### ⚠️ Archivos PERMITIDOS en raíz (únicos)
+
+**Solo estos archivos pueden estar en la raíz:**
+- `.env` (configuración local - gitignored)
+- `.gitignore`
+- `README.md`
+- `LEER_PRIMERO.md`
+- `requirements.txt`
+- `start_d8.py`
+- `version_info.json`
+
+**TODO LO DEMÁS debe ir en subdirectorios.**
+
+### 🔥 Antes de crear un archivo, pregúntate:
+
+1. ¿Es un script? → `scripts/`
+2. ¿Es documentación? → `docs/`
+3. ¿Son datos generados? → `data/`
+4. ¿Es código de la app? → `app/`
+5. ¿Es librería reutilizable? → `lib/`
+
+**Si no sabes dónde ponerlo, pregunta al usuario. NO LO PONGAS EN LA RAÍZ.**
+
+---
+
 # 🚀 GUÍA DE INICIO RÁPIDO - D8
 
 **Sistema de IA completamente autónomo**  
@@ -104,6 +158,92 @@ Agente debe:
 ```
 
 **⚠️ NO ignorar este comando. Es crítico para el aprendizaje acumulativo del sistema.**
+
+---
+
+## 📋 PROTOCOLO: Gestión de Tareas Pendientes
+
+### Cuando el usuario dice "agregar pendiente", "add task", "guardar pendiente", etc.
+
+**ACCIÓN OBLIGATORIA:**
+1. ✅ **Registrar en el sistema de pendientes** → `docs/07_reportes/PENDIENTES.md`
+2. ✅ **Incluir toda la información necesaria:**
+   - **Título claro** del pendiente
+   - **Contexto completo** de por qué quedó pendiente
+   - **Problema específico** que necesita solución
+   - **Opciones de solución** identificadas (si existen)
+   - **Prioridad** (Alta/Media/Baja)
+   - **Tags** para búsqueda rápida
+   - **Fecha de registro**
+   - **Referencias** a archivos, commits, o documentación relacionada
+
+3. ✅ **Formato estándar:**
+   ```markdown
+   ## [PENDIENTE] Título Descriptivo
+   
+   **Fecha de registro:** YYYY-MM-DD
+   **Prioridad:** Alta/Media/Baja
+   **Estado:** Pendiente/En Progreso/Bloqueado
+   
+   ### Contexto
+   [Qué estábamos haciendo cuando surgió este pendiente]
+   
+   ### Problema
+   [Descripción específica del problema o tarea pendiente]
+   
+   ### Opciones de Solución
+   1. **Opción A:** [Descripción]
+      - Pros: [ventajas]
+      - Contras: [desventajas]
+      - Esfuerzo estimado: [tiempo]
+   
+   2. **Opción B:** [Descripción]
+      - Pros: [ventajas]
+      - Contras: [desventajas]
+      - Esfuerzo estimado: [tiempo]
+   
+   ### Referencias
+   - Archivos: [lista de archivos relacionados]
+   - Commits: [commits relacionados si existen]
+   - Documentación: [links a docs relacionadas]
+   
+   ### Notas Adicionales
+   [Cualquier información extra relevante]
+   
+   ### Tags
+   `#tag1` `#tag2` `#tag3`
+   ```
+
+4. ✅ **Cuando el usuario pregunte por pendientes:**
+   - Leer `docs/07_reportes/PENDIENTES.md`
+   - Mostrar resumen de todos los pendientes
+   - Filtrar por prioridad si se solicita
+   - Ofrecer opciones de solución para cada uno
+
+**EJEMPLO:**
+```
+Usuario: "Agregar pendiente: el problema de JSON con Groq"
+
+Agente debe:
+1. Crear/actualizar docs/07_reportes/PENDIENTES.md
+2. Registrar el pendiente con contexto completo
+3. Incluir opciones de solución (prompt engineering, Gemini, etc.)
+4. Confirmar registro al usuario
+```
+
+**EJEMPLO DE CONSULTA:**
+```
+Usuario: "¿Qué pendientes tengo?" o "Muéstrame los pendientes"
+
+Agente debe:
+1. Leer docs/07_reportes/PENDIENTES.md
+2. Listar todos los pendientes con:
+   - Título
+   - Prioridad
+   - Resumen breve
+3. Preguntar si quiere detalles de alguno específico
+4. Ofrecer opciones de solución
+```
 
 ---
 

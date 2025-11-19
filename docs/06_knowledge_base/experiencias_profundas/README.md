@@ -38,6 +38,13 @@ Descubrimiento automático de nichos rentables
 - **Decisión:** Agente especializado con genome fijo
 - **Resultado:** Análisis de mercados automático
 
+#### [Segmentación Geográfica Multi-Mercado](segmentacion_geografica.md)
+Sistema de marketing digital enfocado en 3 mercados: USA, España, Chile
+- **Fecha:** 2025-11-19
+- **Decisión:** Segmentación en 3 geografías con configuración específica por mercado
+- **Resultado:** Análisis multi-geo automático con insights culturales, económicos y de plataforma
+- **Tags:** `#geografia` `#marketing` `#usa` `#españa` `#chile` `#localizacion`
+
 ---
 
 ### 🔧 Configuración y Setup

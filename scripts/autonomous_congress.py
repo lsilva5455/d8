@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import List, Dict, Any
 import copy
 
-sys.path.insert(0, str(Path(__file__).parent))
+# Agregar raíz del proyecto al path para imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome

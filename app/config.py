@@ -107,6 +107,69 @@ class CongressConfig:
 
 
 @dataclass
+class GeographicMarket:
+    """Configuration for a geographic market"""
+    code: str  # USA, ES, CL
+    name: str
+    language: str
+    currency: str
+    currency_symbol: str
+    purchasing_power_index: float  # Relative to USA = 1.0
+    digital_adoption_rate: float  # 0-1
+    preferred_platforms: list
+    payment_methods: list
+    business_hours_offset: int  # UTC offset
+
+
+@dataclass
+class MarketingConfig:
+    """Marketing and geographic targeting settings"""
+    target_markets: Dict[str, GeographicMarket] = None
+    primary_market: str = "USA"
+    
+    def __post_init__(self):
+        if self.target_markets is None:
+            self.target_markets = {
+                "USA": GeographicMarket(
+                    code="USA",
+                    name="United States",
+                    language="English",
+                    currency="USD",
+                    currency_symbol="$",
+                    purchasing_power_index=1.0,
+                    digital_adoption_rate=0.92,
+                    preferred_platforms=["Instagram", "TikTok", "YouTube", "Twitter", "LinkedIn"],
+                    payment_methods=["Stripe", "PayPal", "Credit Card", "Apple Pay", "Google Pay"],
+                    business_hours_offset=-5  # EST
+                ),
+                "ES": GeographicMarket(
+                    code="ES",
+                    name="España",
+                    language="Spanish",
+                    currency="EUR",
+                    currency_symbol="€",
+                    purchasing_power_index=0.75,
+                    digital_adoption_rate=0.88,
+                    preferred_platforms=["Instagram", "YouTube", "TikTok", "Twitter", "LinkedIn"],
+                    payment_methods=["Stripe", "PayPal", "Bizum", "Credit Card"],
+                    business_hours_offset=+1  # CET
+                ),
+                "CL": GeographicMarket(
+                    code="CL",
+                    name="Chile",
+                    language="Spanish",
+                    currency="CLP",
+                    currency_symbol="$",
+                    purchasing_power_index=0.45,
+                    digital_adoption_rate=0.82,
+                    preferred_platforms=["Instagram", "TikTok", "YouTube", "Twitter", "LinkedIn"],
+                    payment_methods=["MercadoPago", "WebPay", "Flow", "PayPal", "Credit Card"],
+                    business_hours_offset=-3  # CLT
+                )
+            }
+
+
+@dataclass
 class FlaskConfig:
     """Flask server settings"""
     flask_env: str = "development"
@@ -204,6 +267,11 @@ class Config:
             google_trends_api_key=os.getenv("GOOGLE_TRENDS_API_KEY"),
             reddit_client_id=os.getenv("REDDIT_CLIENT_ID"),
             reddit_client_secret=os.getenv("REDDIT_CLIENT_SECRET")
+        )
+        
+        # Marketing Configuration
+        self.marketing = MarketingConfig(
+            primary_market=os.getenv("PRIMARY_MARKET", "USA")
         )
     
     def _load_agent_config(self) -> None:
