@@ -1,6 +1,7 @@
 """
 The Hive - Main Entry Point
 Evolutionary AI Agent Ecosystem
+Integrated with D8 Economy System (FASE 2)
 """
 
 from flask import Flask, jsonify, request
@@ -15,6 +16,16 @@ from app.distributed.orchestrator import orchestrator_bp, orchestrator
 from typing import List
 import logging
 import os
+
+# FASE 2: Import economy systems
+try:
+    from app.economy.d8_credits import D8CreditsSystem
+    from app.economy.accounting import AutonomousAccountingSystem
+    from app.economy.revenue_attribution import RevenueAttributionSystem
+    ECONOMY_AVAILABLE = True
+except ImportError:
+    ECONOMY_AVAILABLE = False
+    logging.warning("Economy system not available - running without economic integration")
 
 # Setup logging
 os.makedirs("data/logs", exist_ok=True)
@@ -40,6 +51,55 @@ population: List[BaseAgent] = []
 evolution_engine: DeepSeekEvolutionEngine = None
 orchestrator_evo: EvolutionOrchestrator = None
 
+# FASE 2: Economy system instances
+credits_system: D8CreditsSystem = None
+accounting_system: AutonomousAccountingSystem = None
+revenue_attribution: RevenueAttributionSystem = None
+
+# D8-GENESIS components
+code_vault: CodeVault = None
+coder_agent: CoderAgent = None
+healer: SelfHealingOrchestrator = None
+
+
+def initialize_economy_systems():
+    """Initialize D8 economy systems (FASE 2)"""
+    global credits_system, accounting_system, revenue_attribution
+    
+    if not ECONOMY_AVAILABLE:
+        logger.warning("Economy systems not available - skipping initialization")
+        return False
+    
+    try:
+        # Initialize D8 Credits
+        credits_system = D8CreditsSystem()
+        logger.info("✅ D8 Credits System initialized")
+        
+        # Initialize Autonomous Accounting
+        accounting_system = AutonomousAccountingSystem()
+        
+        # Set initial budgets
+        accounting_system.set_monthly_budget("api_calls", 500.0)
+        accounting_system.set_monthly_budget("infrastructure", 200.0)
+        accounting_system.set_monthly_budget("research", 100.0)
+        logger.info("✅ Autonomous Accounting initialized with budgets")
+        
+        # Initialize Revenue Attribution
+        revenue_attribution = RevenueAttributionSystem()
+        logger.info("✅ Revenue Attribution System initialized")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize economy systems: {e}")
+        return False
+
+
+# Global state (in production, use proper state management)
+population: List[BaseAgent] = []
+evolution_engine: DeepSeekEvolutionEngine = None
+orchestrator_evo: EvolutionOrchestrator = None
+
 # D8-GENESIS components
 code_vault: CodeVault = None
 coder_agent: CoderAgent = None
@@ -52,8 +112,15 @@ def index():
     return jsonify({
         "status": "online",
         "project": "The Hive",
-        "version": "0.2.0",
+        "version": "0.2.0 - FASE 2",
         "population_size": len(population),
+        "economy": {
+            "credits_system_ready": credits_system is not None,
+            "accounting_ready": accounting_system is not None,
+            "revenue_attribution_ready": revenue_attribution is not None,
+            "total_revenue": credits_system.get_total_revenue() if credits_system else 0,
+            "active_wallets": len(credits_system.wallets) if credits_system else 0
+        },
         "d8_genesis": {
             "code_vault_ready": code_vault is not None,
             "coder_agent_ready": coder_agent is not None,
@@ -70,6 +137,8 @@ def index():
             "/api/agents": "List all agents",
             "/api/agents/<id>": "Get agent details",
             "/api/evolve": "Trigger evolution cycle",
+            "/api/economy/status": "Economy system status",
+            "/api/economy/report": "Generate accounting report",
             "/api/genesis/ingest": "Ingest legacy code",
             "/api/genesis/generate": "Generate polymorphic code",
             "/api/genesis/heal": "Self-heal broken code",
@@ -731,6 +800,94 @@ def initialize_hive():
     
     logger.info(f"✅ Hive initialized with {len(population)} agents")
     logger.info(f"🎯 Ready to evolve for {config.evolution.generations} generations")
+    
+    # FASE 2: Initialize economy systems
+    if ECONOMY_AVAILABLE:
+        economy_ready = initialize_economy_systems()
+        if economy_ready:
+            logger.info("💰 Economy systems initialized and ready")
+            
+            # Connect agents to economy
+            for agent in population:
+                agent.credits_system = credits_system
+                agent.accounting_system = accounting_system
+                if credits_system:
+                    agent.wallet = credits_system.create_wallet(agent.agent_id)
+            
+            logger.info(f"💰 {len(population)} agent wallets created")
+            
+            # Connect economy to orchestrator
+            if orchestrator_evo:
+                orchestrator_evo.revenue_attribution = revenue_attribution
+                logger.info("💰 Revenue attribution connected to evolution")
+
+
+# FASE 2: Economy API Endpoints
+
+@app.route('/api/economy/status', methods=['GET'])
+def economy_status():
+    """Get current economy system status"""
+    if not ECONOMY_AVAILABLE or not credits_system:
+        return jsonify({"error": "Economy system not available"}), 503
+    
+    return jsonify({
+        "total_revenue": credits_system.get_total_revenue(),
+        "active_wallets": len(credits_system.wallets),
+        "total_transactions": sum(len(w.transactions) for w in credits_system.wallets.values()),
+        "budget_status": {
+            cat: {
+                "spent": accounting_system.get_total_expenses(category=cat),
+                "budget": accounting_system.budgets.get(cat, {}).get("amount", 0)
+            }
+            for cat in ["api_calls", "infrastructure", "research"]
+        } if accounting_system else {},
+        "top_earners": [
+            {
+                "agent_id": agent.agent_id[:8],
+                "revenue": agent.get_total_revenue(),
+                "roi": agent.get_roi()
+            }
+            for agent in sorted(population, key=lambda a: a.get_total_revenue(), reverse=True)[:5]
+        ]
+    })
+
+
+@app.route('/api/economy/report', methods=['GET'])
+def economy_report():
+    """Generate comprehensive accounting report"""
+    if not ECONOMY_AVAILABLE or not accounting_system:
+        return jsonify({"error": "Accounting system not available"}), 503
+    
+    try:
+        report = accounting_system.generate_daily_report()
+        return jsonify(report)
+    except Exception as e:
+        logger.error(f"Failed to generate report: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/economy/wallets', methods=['GET'])
+def list_wallets():
+    """List all agent wallets"""
+    if not ECONOMY_AVAILABLE or not credits_system:
+        return jsonify({"error": "Credits system not available"}), 503
+    
+    wallets_data = []
+    for agent_id, wallet in credits_system.wallets.items():
+        wallets_data.append({
+            "agent_id": agent_id[:8],
+            "balance": wallet.balance,
+            "total_received": sum(t.amount for t in wallet.transactions if t.amount > 0),
+            "total_spent": abs(sum(t.amount for t in wallet.transactions if t.amount < 0)),
+            "transaction_count": len(wallet.transactions)
+        })
+    
+    wallets_data.sort(key=lambda w: w['balance'], reverse=True)
+    
+    return jsonify({
+        "total_wallets": len(wallets_data),
+        "wallets": wallets_data
+    })
 
 
 if __name__ == "__main__":

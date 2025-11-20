@@ -54,21 +54,6 @@ class MemoryConfig:
 
 
 @dataclass
-class ContentEmpireConfig:
-    """Content generation settings"""
-    wordpress_url: Optional[str] = None
-    wordpress_username: Optional[str] = None
-    wordpress_password: Optional[str] = None
-
-
-@dataclass
-class DeviceFarmConfig:
-    """Device automation settings"""
-    appium_server_url: str = "http://localhost:4723"
-    android_devices: list = None
-
-
-@dataclass
 class LoggingConfig:
     """Logging settings"""
     log_level: str = "INFO"
@@ -220,21 +205,6 @@ class Config:
         self.memory = MemoryConfig(
             chroma_persist_directory=str(AGENTS_BASE_PATH / mem.get("vector_store_path", "memories/vector_store")),
             chroma_collection_name=mem.get("chroma_collection_name", "agent_memory")
-        )
-        
-        # Content Empire Configuration
-        ce = self._agent_config.get("content_empire", {})
-        self.content_empire = ContentEmpireConfig(
-            wordpress_url=ce.get("wordpress_url"),
-            wordpress_username=ce.get("wordpress_username"),
-            wordpress_password=ce.get("wordpress_password")
-        )
-        
-        # Device Farm Configuration
-        df = self._agent_config.get("device_farm", {})
-        self.device_farm = DeviceFarmConfig(
-            appium_server_url=df.get("appium_server_url", "http://localhost:4723"),
-            android_devices=df.get("android_devices", [])
         )
         
         # Logging Configuration

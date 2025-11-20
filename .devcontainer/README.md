@@ -319,8 +319,10 @@ All tools from `requirements.txt` including:
 ### Project Documentation
 
 - **[README.md](../README.md)** - Main project documentation
-- **[D8-GENESIS Module](../docs/D8_GENESIS_MODULE.md)** - Self-coding system
-- **[Monetization Strategy](../ESTRATEGIA_MONETIZACION.md)** - Business analysis
+- **[Copilot Instructions](../.github/copilot-instructions.md)** - Project foundational context
+- **[Knowledge Base](../docs/06_knowledge_base/README.md)** - Cumulative knowledge system
+- **[Monetization Strategy](../docs/03_operaciones/monetizacion.md)** - Business analysis
+- **[PENDIENTES](../PENDIENTES.md)** - Current tasks (FASE 2)
 
 ### External Resources
 

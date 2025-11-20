@@ -303,13 +303,13 @@ systemctl restart hive.service
 
 ### ROI Calculation
 
-**Content Empire (3 agents):**
-- Expected revenue: $100-300/month (optimistic)
+**Sistema Autónomo (3 agentes):**
+- Expected revenue: Variable según nichos descubiertos
 - Costs: $15/month
-- **Net profit: $85-285/month**
-- **ROI: 567-1900%**
+- **Net profit: Depende de estrategia evolutiva**
+- **ROI: Variable según autonomía**
 
-**Break-even: Month 2** (hardware paid off)
+**Break-even: Depende de descubrimientos autónomos**
 
 ---
 

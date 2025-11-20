@@ -6,8 +6,8 @@
 
 ## 📋 Documentos Disponibles
 
-### [Estrategia de Monetización](monetizacion.md)
-Cómo monetizar nichos descubiertos por D8: estrategias de revenue, implementación de content empires, affiliate marketing y optimización de conversión.
+### [Monetización Autónoma](monetizacion.md)
+Cómo D8 descubre y monetiza nichos automáticamente mediante: **Niche Discovery → Autonomous Congress → Darwin Evolution**. Sistema 100% autónomo sin intervención humana.
 
 ---
 
@@ -21,19 +21,21 @@ Cómo monetizar nichos descubiertos por D8: estrategias de revenue, implementaci
 
 ---
 
-## 🔄 Flujo Operacional Típico
+## 🔄 Flujo Operacional Autónomo
 
 ```
-1. Ejecutar Niche Discovery
+1. Niche Discovery → Descubre oportunidades rentables (sin humano)
    ↓
-2. Analizar nichos descubiertos
+2. Autonomous Congress → Investiga mejores técnicas (sin aprobación)
    ↓
-3. Implementar estrategia de monetización
+3. Darwin Evolution → Despliega agentes optimizados (sin intervención)
    ↓
-4. Ejecutar Congreso Autónomo (mejora continua)
+4. Self-Healing → Auto-corrige errores (sin supervisión)
    ↓
-5. Monitorear y escalar
+5. Loop infinito → Mejora continua (cero intervención humana)
 ```
+
+**Principio Fundacional:** D8 opera completamente autónomo después del setup inicial.
 
 ---
 

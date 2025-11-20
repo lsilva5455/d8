@@ -45,6 +45,34 @@ Sistema de marketing digital enfocado en 3 mercados: USA, España, Chile
 - **Resultado:** Análisis multi-geo automático con insights culturales, económicos y de plataforma
 - **Tags:** `#geografia` `#marketing` `#usa` `#españa` `#chile` `#localizacion`
 
+#### [Pool de Tests Mock Economy](pool_tests_mock_economy.md)
+Sistema de testing para economía mock sin dependencias externas
+- **Fecha:** 2025-11-20
+- **Decisión:** Crear pool de tests completo para sistema mock (45 tests, 9 suites)
+- **Resultado:** ✅ Sistema mock validado, script pre-commit automatizado, docs completas
+- **Componentes:** test_mock_economy.py, conftest.py, validate_mock_economy.py
+- **Tags:** `#testing` `#mock` `#economia` `#ci-cd` `#quality-assurance`
+
+#### [Refactorización Documental Post-Fundacional](refactor_docs_fundacional.md)
+Eliminación de conceptos pre-fundacionales en documentación
+- **Fecha:** 2025-11-20
+- **Trigger:** Usuario detectó "Content Empire" y "Device Farm" en docs
+- **Problema:** Documentación reflejaba estrategias manuales pre-fundacionales
+- **Solución:** Refactorizar 9 archivos para alinear con principio de autonomía total
+- **Resultado:** ✅ Docs 100% coherentes con 3 subsistemas independientes (Niche Discovery, Congress, Darwin)
+- **Lecciones:** Palabras importan, documentación refleja arquitectura mental, usuario audita coherencia
+- **Tags:** `#refactorización` `#documentación` `#autonomía` `#post-fundacional` `#coherencia`
+
+#### [Auditoría Pre-FASE 2](auditoria_pre_fase2.md)
+Limpieza completa de código pre-fundacional antes de FASE 2
+- **Fecha:** 2025-11-20
+- **Trigger:** Usuario pregunta si quedan conceptos pre-fundacionales
+- **Hallazgos:** Código obsoleto en app/config.py, README.md, LEER_PRIMERO.md, requirements.txt, scripts de tests
+- **Acciones:** Eliminadas clases ContentEmpireConfig/DeviceFarmConfig, scripts marcados como deprecated
+- **Resultado:** ✅ Sistema 100% limpio - 0 referencias en código operacional
+- **Veredicto:** READY PARA FASE 2 (integración economía mock)
+- **Tags:** `#auditoría` `#limpieza` `#fase2` `#preparación`
+
 ---
 
 ### 🔧 Configuración y Setup
@@ -76,6 +104,20 @@ Cambio de Gemini a Groq por rate limits
 - **Problema:** Gemini 429 errors (15 req/min)
 - **Solución:** Worker Groq (30 req/min, 14,400/día)
 - **Resultado:** ✅ 100% success rate
+
+#### [Auditoría Pre-FASE 2](auditoria_pre_fase2.md)
+Auditoría exhaustiva de código y documentación pre-fundacional
+- **Fecha:** 2025-11-19
+- **Objetivo:** Eliminar referencias a Content Empire y Device Farm
+- **Resultado:** Sistema 100% limpio, 34/34 tests passing
+- **Tags:** `#limpieza` `#auditoria` `#fase2`
+
+#### [Limpieza Pre-FASE 2](limpieza_pre_fase2.md)
+Organización final de raíz del proyecto y preparación para handoff
+- **Fecha:** 2025-11-19
+- **Objetivo:** Limpiar raíz, organizar archivos históricos, preparar PENDIENTES.md
+- **Resultado:** ✅ Raíz limpia, archivos históricos organizados, sistema listo para FASE 2
+- **Tags:** `#organizacion` `#handoff` `#fase2`
 
 ---
 

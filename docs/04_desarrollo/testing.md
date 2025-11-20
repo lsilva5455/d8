@@ -1,8 +1,62 @@
 # 🎯 D8 - Sistema de Pruebas y Optimización
 
-## 📋 Arquitectura del Sistema
+## 📋 Índice
 
-### 1️⃣ **Niche Discovery Agent**
+1. [Arquitectura del Sistema](#arquitectura)
+2. [Pool de Tests Mock Economy](#pool-mock-economy)
+3. [Niche Discovery Agent](#niche-discovery)
+4. [Congreso de Optimización](#congreso)
+5. [Sistema Autónomo Test](#sistema-autonomo)
+
+---
+
+## 🧪 Pool de Tests Mock Economy {#pool-mock-economy}
+
+**Nuevo:** Sistema completo de testing para economía mock sin dependencias externas.
+
+### Archivos
+
+| Archivo | Propósito | Tests |
+|---------|-----------|-------|
+| [`tests/economy/test_mock_economy.py`](../../tests/economy/test_mock_economy.py) | 45 tests en 9 suites | ~700 líneas |
+| [`tests/economy/conftest.py`](../../tests/economy/conftest.py) | 15 fixtures reutilizables | ~400 líneas |
+| [`scripts/tests/validate_mock_economy.py`](../../scripts/tests/validate_mock_economy.py) | Validación pre-commit | ~200 líneas |
+
+### Ejecución Rápida
+
+```powershell
+# Validación pre-commit (recomendado)
+python scripts\tests\validate_mock_economy.py
+
+# Demo interactivo
+python scripts\quick_start_economy.py
+
+# Tests completos (requiere pytest)
+$env:PYTHONPATH = "c:\Users\PcDos\d8"
+pytest tests/economy/test_mock_economy.py -v
+```
+
+### Test Suites
+
+1. **TestMockBlockchainClient** - MockBSCClient validation (4 tests)
+2. **TestMockTokenClient** - MockD8TokenClient validation (4 tests)
+3. **TestMockSecurity** - Leyes fundamentales (4 tests)
+4. **TestMockD8CreditsSystem** - Wallets y transfers (4 tests)
+5. **TestMockRevenueAttribution** - Regla 40/40/20 (3 tests)
+6. **TestMockAutonomousAccounting** - Expenses y budgets (4 tests)
+7. **TestMockIntegratedWorkflow** - End-to-end flows (3 tests)
+8. **TestMockEdgeCases** - Error handling (6 tests)
+9. **TestMockPerformance** - Stress tests (3 tests)
+
+**Documentación completa:** [`tests/economy/README.md`](../../tests/economy/README.md)
+
+**Experiencia documentada:** [`docs/06_knowledge_base/experiencias_profundas/pool_tests_mock_economy.md`](../06_knowledge_base/experiencias_profundas/pool_tests_mock_economy.md)
+
+---
+
+## 📋 Arquitectura del Sistema {#arquitectura}
+
+### 1️⃣ **Niche Discovery Agent** {#niche-discovery}
 Agente especializado en descubrir nichos rentables.
 
 **Ejecutar:**
@@ -42,7 +96,7 @@ python test_congress_optimization.py
 
 ---
 
-### 3️⃣ **Content Empire Test**
+### 3️⃣ **Sistema Autónomo Test**
 Prueba generación de contenido para redes sociales.
 
 **Ejecutar:**
@@ -59,7 +113,7 @@ python test_content_empire.py
 
 ---
 
-### 4️⃣ **Device Farm Test**
+### 4️⃣ **Sistema Evolutivo Test**
 Prueba planes de automatización de dispositivos Android.
 
 **Ejecutar:**

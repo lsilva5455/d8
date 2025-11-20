@@ -159,14 +159,11 @@ Test específico de integración Groq
 # Test del congreso con optimización
 python scripts/tests/test_congress_optimization.py
 
-# Test de content empire
-python scripts/tests/test_content_empire.py
-
-# Test de device farm
-python scripts/tests/test_device_farm.py
-
 # Test de niche congress
 python scripts/tests/test_niche_congress.py
+
+# Test del sistema evolutivo
+python scripts/tests/test_simple_niche.py
 ```
 
 ---
