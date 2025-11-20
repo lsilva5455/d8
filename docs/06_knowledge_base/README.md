@@ -29,7 +29,10 @@ docs/
 └── experiencias_profundas/          # Conocimiento específico D8
     ├── README.md                    # Índice de experiencias
     ├── EXPERIENCIAS_BASE.md         # Experiencias fundamentales
-    ├── congreso_autonomo.md         # Lecciones del congreso
+    ├── congreso_autonomo.md         # Lecciones del congreso (2025-11-19)
+    ├── telegram_github_copilot_integration.md  # Bot inteligente (2025-11-20) ← NUEVO
+    ├── pool_tests_mock_economy.md   # Sistema económico mock
+    ├── auditoria_pre_fase2.md       # Auditoría pre-integración
     ├── niche_discovery.md           # Lecciones de niche discovery
     └── sistema_evolutivo.md         # Lecciones de evolución
 ```
@@ -222,6 +225,49 @@ tecnologías, realiza prueba y error. TODO AUTOMATIZADO."
 - scripts/autonomous_congress.py
 - docs/01_arquitectura/sistema_completo.md (sección Congreso)
 - data/congress_experiments/cycle_*.json
+```
+
+### 3. Telegram + GitHub Copilot Integration (2025-11-20)
+
+**Archivo:** `experiencias_profundas/telegram_github_copilot_integration.md`
+
+```markdown
+## Contexto
+Bot de Telegram con respuestas limitadas. Necesita contexto del proyecto.
+
+## Problema
+- Bot responde "no estoy seguro de que necesitas"
+- Sin acceso a documentación del proyecto
+- Modelos de Groq deprecándose frecuentemente
+
+## Decisión
+Arquitectura híbrida GitHub API + Groq LLM:
+1. GitHub REST API: Cargar contexto (VISION, ROADMAP, PENDIENTES)
+2. Groq LLM: Generar respuestas con ese contexto
+3. Fallback: Groq con contexto limitado si GitHub falla
+
+## Implementación
+- app/integrations/github_copilot.py (400 líneas)
+- app/integrations/telegram_bot.py (modificado)
+- scripts/tests/test_copilot_integration.py
+
+## Resultado
+✅ Respuestas de 800-1200 caracteres contextualizadas
+✅ Latencia 1-2 segundos
+✅ Test pasando con modelo llama-3.3-70b-versatile
+✅ 0% error rate después de fix
+
+## Lecciones
+1. Testing ANTES de confirmar es crítico (usuario frustrado con fixes no verificados)
+2. Groq depreca modelos frecuentemente (mixtral → llama-3.1 → llama-3.3)
+3. Telegram Markdown parsing es frágil (usar plain text)
+4. Detección de preguntas: '?' es suficiente
+5. Arquitectura híbrida permite migración futura a Copilot Chat API
+
+## Artefactos
+- app/integrations/github_copilot.py
+- docs/03_operaciones/github_copilot_setup.md
+- scripts/tests/test_copilot_integration.py
 ```
 
 ---

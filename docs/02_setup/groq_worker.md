@@ -270,14 +270,14 @@ El orchestrator asignará la tarea al worker **más rápido disponible** (Groq).
 
 ### Costos Real-World:
 ```
-Content Empire (Opción A):
-- 5 agentes × 100 posts/día = 500 requests/día
+Descubrimiento de Nicho (Escenario A):
+- 5 agentes × 100 acciones/día = 500 requests/día
 - Groq free tier: 14,400/día
 - SOBRAN: 13,900 requests
 - Costo: $0.00/mes ✅
 
-Device Farm (Opción B):  
-- 20 dispositivos × 50 acciones/día = 1,000 requests/día
+Sistema Evolutivo (Escenario B):  
+- 20 agentes × 50 acciones/día = 1,000 requests/día
 - Groq free tier: 14,400/día
 - SOBRAN: 13,400 requests  
 - Costo: $0.00/mes ✅

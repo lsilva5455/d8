@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 import copy
 
-# Agregar raíz del proyecto al path para imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome
@@ -41,6 +40,14 @@ class AutonomousCongress:
         # Experiment tracking
         self.experiments = []
         self.current_generation = 1
+        
+        # Telegram integration (for Leo's optional oversight)
+        self.telegram_bot = None
+        self.paused = False
+        self.manual_tasks = []
+        self.total_experiments = 0
+        self.improvements_implemented = 0
+        self.last_experiment = None
     
     def _initialize_congress(self) -> List[Dict[str, Any]]:
         """Initialize autonomous congress members"""
@@ -176,6 +183,98 @@ Respond with validation results:
         
         return members
     
+    # =================================================================
+    # Telegram Integration Methods (Leo's oversight interface)
+    # =================================================================
+    
+    def set_telegram_bot(self, bot):
+        """Inject Telegram bot reference for notifications"""
+        self.telegram_bot = bot
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current congress status for Telegram queries"""
+        return {
+            "generation": self.current_generation,
+            "total_experiments": self.total_experiments,
+            "improvements_implemented": self.improvements_implemented,
+            "paused": self.paused,
+            "last_experiment": self.last_experiment or "Ninguno",
+            "avg_improvement": self._calculate_avg_improvement()
+        }
+    
+    def get_recent_experiments(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """Get recent experiments for Telegram display"""
+        recent = sorted(
+            self.experiments,
+            key=lambda x: x.get('timestamp', 0),
+            reverse=True
+        )[:limit]
+        
+        return [{
+            "title": exp.get('experiment', {}).get('finding', {}).get('opportunity', 'Unknown'),
+            "improvement": exp.get('improvement', 0),
+            "approved": exp.get('improvement', 0) > 10,
+            "date": time.strftime('%Y-%m-%d', time.localtime(exp.get('timestamp', 0)))
+        } for exp in recent]
+    
+    def assign_manual_task(self, description: str, requested_by: str) -> str:
+        """Leo assigns specific task via Telegram"""
+        task_id = f"manual_{int(time.time())}_{hash(description) % 10000}"
+        
+        self.manual_tasks.append({
+            "id": task_id,
+            "description": description,
+            "requested_by": requested_by,
+            "status": "pending",
+            "created_at": time.time()
+        })
+        
+        return task_id
+    
+    def pause(self):
+        """Pause autonomous execution (Leo command)"""
+        self.paused = True
+    
+    def resume(self):
+        """Resume autonomous execution (Leo command)"""
+        self.paused = False
+    
+    def approve_experiment(self, experiment_id: str):
+        """Leo manually approves an experiment"""
+        for exp in self.experiments:
+            if exp.get('id') == experiment_id:
+                exp['manually_approved'] = True
+                return True
+        return False
+    
+    def reject_experiment(self, experiment_id: str):
+        """Leo manually rejects an experiment"""
+        for exp in self.experiments:
+            if exp.get('id') == experiment_id:
+                exp['manually_rejected'] = True
+                return True
+        return False
+    
+    def _calculate_avg_improvement(self) -> float:
+        """Calculate average improvement across experiments"""
+        if not self.experiments:
+            return 0.0
+        
+        improvements = [e.get('improvement', 0) for e in self.experiments]
+        return sum(improvements) / len(improvements) if improvements else 0.0
+    
+    async def _notify_leo(self, message: str, markup=None):
+        """Send Telegram notification to Leo"""
+        if self.telegram_bot:
+            try:
+                await self.telegram_bot.notify_leo(message, markup)
+            except Exception as e:
+                print(f"⚠️  Failed to notify Leo: {e}")
+    
+    # =================================================================
+    # End Telegram Integration
+    # =================================================================
+    
     def run_autonomous_cycle(self, target_system: str = "niche_discovery", cycles: int = 3):
         """
         Run autonomous improvement cycles
@@ -204,6 +303,13 @@ Respond with validation results:
         print()
         
         for cycle in range(1, cycles + 1):
+            # Check if paused by Leo
+            if self.paused:
+                print("⏸️  Congreso pausado por Leo. Esperando reanudación...")
+                while self.paused:
+                    time.sleep(5)
+                print("▶️  Congreso reanudado. Continuando...")
+            
             print(f"🔄 CICLO {cycle}/{cycles}")
             print("-" * 70)
             print()
@@ -322,16 +428,23 @@ Respond with validation results:
             success = True  # Simulate result
             improvement = 15.5  # Simulate improvement
             
-            results.append({
+            exp_result = {
+                "id": f"exp_{int(time.time())}_{hash(str(exp)) % 10000}",
                 "experiment": exp,
                 "success": success,
                 "improvement": improvement,
+                "timestamp": time.time(),
                 "metrics": {
                     "accuracy": 0.92,
                     "speed": "1.2s",
                     "cost": "$0.001"
                 }
-            })
+            }
+            
+            results.append(exp_result)
+            self.experiments.append(exp_result)
+            self.total_experiments += 1
+            self.last_experiment = exp['finding']['opportunity']
             
             print(f"✅ (+{improvement:.1f}%)")
         
@@ -380,6 +493,8 @@ Respond with validation results:
                 "implementation": impl_plan,
                 "timestamp": time.time()
             })
+            
+            self.improvements_implemented += 1
         
         return implemented
     

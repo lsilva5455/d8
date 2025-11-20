@@ -1,22 +1,23 @@
 # 🤖 D8 - Sistema de IA Completamente Autónomo
 
-**Sistema de inteligencia artificial que se mejora a sí mismo sin intervención humana.**
+**Sistema de inteligencia artificial que evoluciona, descubre nichos y se mejora a sí mismo sin intervención humana.**
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/flask-3.0-green.svg)](https://flask.palletsprojects.com/)
-[![Groq](https://img.shields.io/badge/groq-llama--3.3-orange.svg)](https://groq.com/)
+[![Tests](https://img.shields.io/badge/tests-34%2F34%20passing-brightgreen.svg)]()
+[![Economy](https://img.shields.io/badge/economy-mock%20ready-blue.svg)]()
+[![Status](https://img.shields.io/badge/status-READY%20FASE%202-orange.svg)]()
 
 ---
 
 ## 🎯 ¿Qué es D8?
 
-D8 es un ecosistema de IA con tres sistemas autónomos:
+D8 es un sistema de IA **completamente autónomo** con tres subsistemas independientes:
 
-1. **🧬 Sistema Evolutivo**: Selección natural de agentes mediante algoritmos genéticos
-2. **💎 Niche Discovery**: Descubrimiento automático de nichos rentables
-3. **🏛️ Congreso Autónomo**: Investigación, experimentación y mejora continua del sistema
+1. **🔬 Niche Discovery**: Descubre oportunidades rentables automáticamente
+2. **🏛️ Autonomous Congress**: Investiga, experimenta y mejora técnicas
+3. **🧬 Darwin Evolution**: Selección natural de mejores agentes
 
-**Característica principal:** Cero intervención humana. D8 evoluciona, experimenta y se optimiza automáticamente.
+**Principio fundacional:** **Cero intervención humana** después del setup inicial.
 
 ---
 
@@ -24,54 +25,37 @@ D8 es un ecosistema de IA con tres sistemas autónomos:
 
 ```
 ┌──────────────────────────────────────┐
-│     SISTEMA EVOLUTIVO (Darwin)       │
-│  Evolución genética de agentes       │
-│  → Mutación, Crossover, Selección    │
-└──────────────┬───────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────┐
 │      NICHE DISCOVERY                 │
-│  Descubrimiento de nichos rentables  │
+│  Descubre nichos rentables           │
 │  → Análisis de mercado automático    │
 └──────────────┬───────────────────────┘
                │
                ▼
 ┌──────────────────────────────────────┐
-│      CONGRESO AUTÓNOMO               │
-│  Mejora continua del sistema         │
-│  → Research → Test → Implement       │
+│      AUTONOMOUS CONGRESS              │
+│  Investiga y experimenta técnicas    │
+│  → Research → Experiment → Validate   │
+└──────────────┬───────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────┐
+│      DARWIN EVOLUTION                │
+│  Selección natural de agentes        │
+│  → Mutación → Crossover → Fitness    │
 └──────────────────────────────────────┘
 ```
 
-### Componentes Principales
+### Estado Actual
 
-1. **Sistema Evolutivo** (`app/evolution/darwin.py`)
-   - Selección natural mediante fitness
-   - Operadores genéticos: mutación (10%), crossover, elite
-   - Población de 20 agentes por generación
+| Componente | Estado | Tests |
+|------------|--------|-------|
+| Niche Discovery | ✅ Diseñado | - |
+| Autonomous Congress | ✅ Operacional | Manual |
+| Darwin Evolution | ✅ Operacional | Manual |
+| Mock Economy | ✅ Validado | 34/34 ✅ |
+| **FASE 2** | ⏳ Pendiente | - |
 
-2. **Niche Discovery** (`scripts/niche_discovery_agent.py`)
-   - Agente especializado en descubrir nichos
-   - Análisis automático de mercados
-   - Genera reportes de oportunidades
-
-3. **Congreso Autónomo** (`scripts/autonomous_congress.py`)
-   - 5 miembros: Researcher, Experimenter, Optimizer, Implementer, Validator
-   - Ciclo completo: Investiga → Experimenta → Valida → Implementa
-   - Mejora el sistema automáticamente sin intervención humana
-
-4. **Base Agent** (`app/agents/base_agent.py`)
-   - Genoma (system prompt) que define comportamiento
-   - Usa Groq LLM (llama-3.3-70b-versatile)
-   - Tracking de métricas de fitness
-
-5. **Orchestrator + Workers** (`app/distributed/`)
-   - Arquitectura distribuida para escalar
-   - Orchestrator Flask en puerto 5000
-   - Workers Groq para procesamiento
-   - Endpoints for agent management and evolution
-   - D8-GENESIS integration endpoints
+**Próxima tarea:** Integrar economía mock con sistema autónomo (FASE 2)
 
 ---
 
@@ -230,23 +214,12 @@ Mutado:   "Explica conceptos complejos de forma casual..."
 
 Ver [docs/03_operaciones/monetizacion.md](docs/03_operaciones/monetizacion.md) para análisis completo.
 
-**Fase 1: Content Empire**
-- Generación de contenido para redes sociales
-- Gestión de múltiples nichos
-- ROI predecible
+**Sistema Autónomo:**
+- Niche Discovery: Descubrimiento automático de oportunidades
+- Autonomous Congress: Investigación y experimentación continua
+- Darwin Evolution: Selección natural de mejores agentes
+- Self-Healing: Auto-corrección sin intervención humana
 
-**Fase 2: Niche Discovery**
-- Descubrimiento automático de oportunidades
-- Análisis de mercados emergentes
-- Escalado inteligente
-
----
-
-## 📊 Project Structure
-
-```
-d8/
-├── app/
 ---
 
 ## 📂 Estructura del Proyecto
@@ -281,14 +254,22 @@ d8/
 │   ├── logs/                # Logs de aplicación
 │   └── congress_experiments/ # Resultados del congreso
 ├── tests/                   # Suite de tests
-├── docs/                    # Documentación
-│   ├── ARQUITECTURA_D8.md   # Arquitectura completa
-│   ├── ESTRATEGIA_MONETIZACION.md
-│   └── ...
+│   ├── economy/             # Tests de economía mock
+│   ├── integration/         # Tests de integración
+│   └── unit/                # Tests unitarios
+├── docs/                    # Documentación (organizada por categoría)
+│   ├── 01_arquitectura/     # Arquitectura del sistema
+│   ├── 02_setup/            # Configuración e instalación
+│   ├── 03_operaciones/      # Operaciones y monetización
+│   ├── 04_desarrollo/       # Guías de desarrollo
+│   ├── 05_troubleshooting/  # Resolución de problemas
+│   ├── 06_knowledge_base/   # Base de conocimiento acumulativo
+│   └── 07_reportes/         # Reportes y resultados
 ├── config/                  # Configuraciones adicionales
 ├── .env                     # Variables de entorno
 ├── .gitignore              # Git ignore
 ├── requirements.txt         # Dependencias
+├── PENDIENTES.md           # Tareas pendientes (FASE 2 activa)
 ├── LEER_PRIMERO.md         # Guía de inicio rápido
 └── README.md               # Este archivo
 ```
@@ -319,7 +300,7 @@ GROQ_API_KEY=gsk_tu_key_aqui
 ## 🧪 Testing
 
 ```bash
-# Ejecutar tests
+# Ejecutar todos los tests
 pytest
 
 # Con cobertura
@@ -328,10 +309,12 @@ pytest --cov=app tests/
 # Test específico
 pytest tests/unit/test_agent.py
 
-# Scripts de prueba del sistema
-python scripts/tests/test_content_empire.py
-python scripts/tests/test_device_farm.py
+# Validar economía mock (FASE 1)
+python scripts/tests/validate_mock_economy.py
+pytest tests/economy/test_mock_economy.py -v
 ```
+
+**Estado actual:** ✅ 34/34 tests passing | ✅ Mock economy validated
 
 ---
 
@@ -356,18 +339,17 @@ python scripts/tests/test_device_farm.py
 
 ## 🛣️ Roadmap
 
-### ✅ Fase 1: Sistema Base
-- [x] Implementación de agentes
-- [x] Motor de evolución (crossover, mutación)
-- [x] API Flask
-- [x] Sistema de configuración
-- [x] Congreso autónomo
+### ✅ Fase 1: Economía Interna (COMPLETADA)
+- [x] Sistema de créditos D8
+- [x] Revenue attribution
+- [x] Autonomous accounting
+- [x] 34 tests + validación completa
 
-### 🚧 Fase 2: Optimización
-- [x] Niche Discovery automático
-- [x] Congreso de mejora continua
-- [ ] Integración con APIs de monetización
-- [ ] Dashboard de métricas
+### 🚀 Fase 2: Integración con Sistema Autónomo (EN PROGRESO)
+- [ ] Conectar D8CreditsSystem con agentes reales
+- [ ] Integrar RevenueAttributionSystem con Darwin
+- [ ] Desplegar AutonomousAccounting en producción
+- [ ] Validación end-to-end
 
 ### 🔮 Fase 3: Escalado
 - [ ] Múltiples workers distribuidos
@@ -410,11 +392,11 @@ Proyecto personal, pero ideas son bienvenidas!
 
 ## 📚 Documentación Adicional
 
-- [D8-GENESIS Module](docs/02_setup/genesis_module.md) - Self-coding & healing system
-- [Strategic Analysis](ESTRATEGIA_MONETIZACION.md) - Full monetization comparison
-- [Experiences Base](documentacion/experiencias_profundas/EXPERIENCIAS_BASE.md) - Development methodology
-- [Groq API Docs](https://console.groq.com/docs)
-- [Ollama Docs](https://ollama.ai/docs)
+- [Copilot Instructions](.github/copilot-instructions.md) - Contexto fundacional del proyecto
+- [Knowledge Base](docs/06_knowledge_base/README.md) - Memoria y experiencias profundas
+- [Autonomous Congress](docs/06_knowledge_base/experiencias_profundas/congreso_autonomo.md) - Sistema de mejora continua
+- [PENDIENTES](PENDIENTES.md) - **FASE 2 en progreso**
+- [Auditoría Pre-FASE 2](docs/06_knowledge_base/experiencias_profundas/auditoria_pre_fase2.md) - Estado actual validado
 
 ---
 

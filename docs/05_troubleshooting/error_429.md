@@ -85,9 +85,9 @@ curl http://localhost:5000/api/workers/stats
 
 ## 💡 PARA PRODUCCIÓN
 
-### Opción A: Content Empire (5 agentes)
+### Escenario A: Descubrimiento de Nicho (5 agentes)
 ```
-5 agentes × 100 posts/día = 500 requests/día
+5 agentes × 100 acciones/día = 500 requests/día
 
 Con Groq free:
 - Capacidad: 14,400 req/día
@@ -96,9 +96,9 @@ Con Groq free:
 - Success rate esperado: 99%+
 ```
 
-### Opción B: Device Farm (20 dispositivos)
+### Escenario B: Sistema Evolutivo a Escala (20 agentes)
 ```
-20 dispositivos × 50 acciones/día = 1,000 requests/día
+20 agentes × 50 acciones/día = 1,000 requests/día
 
 Con Groq free:
 - Capacidad: 14,400 req/día
@@ -112,8 +112,8 @@ Con Groq free:
 Groq Paid:
 - $0.10 / 1M tokens input
 - $0.32 / 1M tokens output
-- Ejemplo: 100,000 posts/mes = ~$20-30/mes
-- ROI: 5000%+ (ingresos $500-1500/mes)
+- Ejemplo: 100,000 acciones/mes = ~$20-30/mes
+- ROI: Variable según nichos descubiertos autónomamente
 ```
 
 ---

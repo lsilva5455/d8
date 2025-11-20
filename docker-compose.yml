@@ -1,0 +1,197 @@
+# ============================================
+# D8 Distributed System - Docker Compose
+# ============================================
+# Profiles available:
+#   - orchestrator: Run central coordinator
+#   - worker-groq: Run Groq API worker
+#   - worker-gemini: Run Gemini API worker
+#   - worker-deepseek: Run DeepSeek local worker (Raspberry Pi)
+#   - full-system: Run orchestrator + all workers (testing)
+#
+# Usage examples:
+#   docker-compose --profile orchestrator up -d
+#   docker-compose --profile worker-deepseek up -d
+#   docker-compose --profile full-system up -d
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # ORCHESTRATOR - Central Task Coordinator
+  # ==========================================
+  orchestrator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.orchestrator
+    container_name: d8-orchestrator
+    hostname: d8-orchestrator
+    profiles:
+      - orchestrator
+      - full-system
+    ports:
+      - "${ORCHESTRATOR_PORT:-5000}:5000"
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - FLASK_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-2}
+      - GUNICORN_THREADS=${GUNICORN_THREADS:-4}
+      - GUNICORN_TIMEOUT=120
+    volumes:
+      - orchestrator-data:/app/data
+      - orchestrator-logs:/app/data/logs
+    networks:
+      - d8-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==========================================
+  # WORKER - Groq API (Fast, Cloud-based)
+  # ==========================================
+  worker-groq:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+      args:
+        WORKER_TYPE: groq
+    container_name: d8-worker-groq
+    hostname: d8-worker-groq
+    profiles:
+      - worker-groq
+      - full-system
+    environment:
+      - WORKER_TYPE=groq
+      - WORKER_ID=${GROQ_WORKER_ID:-groq-worker-1}
+      - ORCHESTRATOR_URL=http://orchestrator:5000
+      - API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - MAX_TOKENS=${MAX_TOKENS:-2000}
+      - TEMPERATURE=${TEMPERATURE:-0.8}
+      - POLL_INTERVAL=${POLL_INTERVAL:-5}
+    volumes:
+      - worker-groq-logs:/app/data/logs
+      - worker-groq-cache:/app/data/cache
+    networks:
+      - d8-network
+    depends_on:
+      - orchestrator
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # ==========================================
+  # WORKER - Gemini API (Google, Free Tier)
+  # ==========================================
+  worker-gemini:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+      args:
+        WORKER_TYPE: gemini
+    container_name: d8-worker-gemini
+    hostname: d8-worker-gemini
+    profiles:
+      - worker-gemini
+      - full-system
+    environment:
+      - WORKER_TYPE=gemini
+      - WORKER_ID=${GEMINI_WORKER_ID:-gemini-worker-1}
+      - ORCHESTRATOR_URL=http://orchestrator:5000
+      - API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash-exp}
+      - MAX_TOKENS=${MAX_TOKENS:-2000}
+      - TEMPERATURE=${TEMPERATURE:-0.8}
+      - POLL_INTERVAL=${POLL_INTERVAL:-5}
+    volumes:
+      - worker-gemini-logs:/app/data/logs
+      - worker-gemini-cache:/app/data/cache
+    networks:
+      - d8-network
+    depends_on:
+      - orchestrator
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # ==========================================
+  # WORKER - DeepSeek (Local, Raspberry Pi 4)
+  # ==========================================
+  worker-deepseek:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker-deepseek
+    container_name: d8-worker-deepseek
+    hostname: d8-worker-deepseek
+    profiles:
+      - worker-deepseek
+      - full-system
+    ports:
+      - "${OLLAMA_PORT:-7100}:7100"  # Expose Ollama API
+      - "${WORKER_STATUS_PORT:-8080}:8080"  # Worker status endpoint
+    environment:
+      - WORKER_TYPE=deepseek
+      - WORKER_ID=${DEEPSEEK_WORKER_ID:-deepseek-worker-1}
+      - ORCHESTRATOR_URL=http://orchestrator:5000
+      - OLLAMA_HOST=0.0.0.0:11434
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-coder:6.7b}
+      - DEEPSEEK_BASE_URL=http://localhost:11434
+      - MAX_TOKENS=${MAX_TOKENS:-1000}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - POLL_INTERVAL=${POLL_INTERVAL:-10}
+    volumes:
+      - worker-deepseek-logs:/app/data/logs
+      - worker-deepseek-cache:/app/data/cache
+      - ollama-models:/root/.ollama/models  # Persist downloaded models
+    networks:
+      - d8-network
+    depends_on:
+      - orchestrator
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'  # Use most of Raspberry Pi 4's cores
+          memory: 6G   # Leave 2GB for system on 8GB Pi
+        reservations:
+          memory: 4G
+
+# ==========================================
+# NETWORKS
+# ==========================================
+networks:
+  d8-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ==========================================
+# VOLUMES
+# ==========================================
+volumes:
+  # Orchestrator
+  orchestrator-data:
+  orchestrator-logs:
+  
+  # Workers
+  worker-groq-logs:
+  worker-groq-cache:
+  worker-gemini-logs:
+  worker-gemini-cache:
+  worker-deepseek-logs:
+  worker-deepseek-cache:
+  
+  # Ollama models (large, persist across restarts)
+  ollama-models:

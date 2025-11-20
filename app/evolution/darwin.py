@@ -2,15 +2,24 @@
 Darwin - Genetic Evolution Engine for Agent Prompts
 Uses DeepSeek (local) for crossover and mutation operations
 Optimized for cost: All evolution operations run locally, zero API cost
+Integrated with D8 Economy for revenue-based fitness (FASE 2)
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Any
 import random
 import json
 import logging
 from dataclasses import dataclass
 import requests
 from datetime import datetime
+
+# Import economy system components
+try:
+    from app.economy.revenue_attribution import RevenueAttributionSystem
+    ECONOMY_AVAILABLE = True
+except ImportError:
+    ECONOMY_AVAILABLE = False
+    logging.warning("Economy system not available - evolution will use basic fitness")
 
 logger = logging.getLogger(__name__)
 
@@ -231,13 +240,17 @@ class EvolutionOrchestrator:
                  population_size: int = 20,
                  elite_size: int = 2,
                  mutation_rate: float = 0.1,
-                 crossover_rate: float = 0.7):
+                 crossover_rate: float = 0.7,
+                 revenue_attribution: Optional[Any] = None):
         self.engine = engine
         self.population_size = population_size
         self.elite_size = elite_size
         self.mutation_rate = mutation_rate
         self.crossover_rate = crossover_rate
         self.generation = 0
+        
+        # FASE 2: Revenue attribution system
+        self.revenue_attribution = revenue_attribution
     
     def select_parents(self, population: List[Genome]) -> Tuple[Genome, Genome]:
         """Tournament selection: Pick best from random sample"""
@@ -289,6 +302,91 @@ class EvolutionOrchestrator:
         logger.info(f"✅ Generation {self.generation} created: {len(new_population)} agents\n")
         
         return new_population
+    
+    # FASE 2: Economic Integration Methods
+    
+    def calculate_fitness_with_revenue(self, agent_data: dict) -> float:
+        """
+        Calculate fitness based on revenue and performance metrics
+        
+        Args:
+            agent_data: {
+                'agent_id': str,
+                'revenue': float,
+                'efficiency': float (0-1),
+                'satisfaction': float (0-1)
+            }
+        
+        Returns:
+            fitness score
+        """
+        # Standard D8 fitness formula
+        fitness = (
+            0.6 * agent_data.get('revenue', 0.0) +
+            0.3 * agent_data.get('efficiency', 0.0) * 100 +
+            0.1 * agent_data.get('satisfaction', 0.0) * 100
+        )
+        
+        return max(0.0, fitness)
+    
+    def distribute_generation_revenue(self, agents_data: List[dict], total_revenue: float) -> dict:
+        """
+        Distribute revenue using 40/40/20 rule
+        
+        Args:
+            agents_data: List of {agent_id, revenue, efficiency, satisfaction}
+            total_revenue: Total revenue to distribute
+        
+        Returns:
+            Distribution dict: {agent_id: amount}
+        """
+        if not self.revenue_attribution or not ECONOMY_AVAILABLE:
+            logger.warning("Revenue attribution not available")
+            return {}
+        
+        try:
+            # Calculate fitness for all agents
+            contributions = []
+            for agent in agents_data:
+                fitness = self.calculate_fitness_with_revenue(agent)
+                contributions.append((agent['agent_id'], fitness))
+            
+            # Use attribution system to distribute
+            distribution = self.revenue_attribution.distribute_revenue(
+                total_revenue=total_revenue,
+                contributions=contributions
+            )
+            
+            logger.info(f"💰 Revenue distributed: ${total_revenue:.2f} across {len(agents_data)} agents")
+            
+            return distribution
+            
+        except Exception as e:
+            logger.error(f"Failed to distribute revenue: {e}")
+            return {}
+    
+    def end_generation_with_economy(self, agents_data: List[dict]) -> None:
+        """
+        End generation and perform economic distribution
+        
+        Call this after all agents have completed their work
+        """
+        # Calculate total revenue from all agents
+        total_revenue = sum(agent.get('revenue', 0.0) for agent in agents_data)
+        
+        if total_revenue <= 0:
+            logger.warning("No revenue generated this generation")
+            return
+        
+        # Distribute revenue
+        distribution = self.distribute_generation_revenue(agents_data, total_revenue)
+        
+        # Log distribution details
+        logger.info("\n💰 GENERATION REVENUE DISTRIBUTION")
+        logger.info(f"Total Revenue: ${total_revenue:.2f}")
+        for agent_id, amount in sorted(distribution.items(), key=lambda x: x[1], reverse=True):
+            percentage = (amount / total_revenue * 100) if total_revenue > 0 else 0
+            logger.info(f"  {agent_id[:8]}: ${amount:.2f} ({percentage:.1f}%)")
 
 
 # Example Usage

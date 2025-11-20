@@ -284,10 +284,10 @@ requests.post("http://raspi:5000/api/workers/results", json={
 - **10 agentes** actuando simultáneamente
 - **100+ acciones/hora** por agente
 - **Evolución local** con GPU (gratis)
-- **Content Empire** escalable
+- **Escalabilidad horizontal** ilimitada
 
-**ROI esperado:** $500-1500/mes  
-**Net profit:** $450-1450/mes
+**ROI esperado:** Depende de nichos descubiertos autónomamente  
+**Net profit:** Variable según estrategia evolutiva
 
 ---
 

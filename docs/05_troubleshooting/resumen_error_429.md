@@ -211,8 +211,8 @@ El problema era **exclusivamente externo** (límites de Google API).
 3. **Probar:** `.\test_groq_system.ps1`
 
 ### Después (implementación)
-4. **Opción A:** Content Empire con 5 agentes
-5. **Opción B:** Device Farm con 20 dispositivos
+4. **Escenario A:** Descubrimiento de Nicho con 5 agentes
+5. **Escenario B:** Sistema Evolutivo con 20 agentes
 6. **Deploy:** Raspberry Pi (docs/02_setup/raspberry_pi.md)
 
 ---
@@ -245,8 +245,8 @@ El problema era **exclusivamente externo** (límites de Google API).
 
 ### Con Groq Free Tier
 ```
-Content Empire: 500 req/día
-Device Farm: 1,000 req/día
+Descubrimiento de Nicho: 500 req/día
+Sistema Evolutivo: 1,000 req/día
 Total: 1,500 req/día
 
 Groq free: 14,400 req/día
@@ -262,8 +262,8 @@ Viable: ✅ SÍ
 - ~20M tokens output = $6.40/mes
 - Total: ~$11.40/mes
 
-Ingresos (Content Empire): $500-1,500/mes
-ROI: 4,386% - 13,158%
+Revenue: Variable según nichos descubiertos
+ROI: Depende de estrategia evolutiva autónoma
 ```
 
 ---

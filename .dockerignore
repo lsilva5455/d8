@@ -1,0 +1,94 @@
+# D8 Docker Build Context - Ignore Rules
+# ========================================
+# Reduce image size and build time by excluding unnecessary files
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation (exclude from build, keep in final image)
+docs/**/*.md
+README.md
+LEER_PRIMERO.md
+*.md
+
+# Data directories (mount as volumes instead)
+data/
+agentes/genomes/
+*.json
+*.log
+
+# Environment files (use templates instead)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker files (not needed in image)
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile*
+
+# Scripts not needed in runtime
+scripts/setup/
+scripts/tests/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Keep only what's needed
+!requirements.txt
+!app/
+!lib/
+!scripts/autonomous_congress.py
+!scripts/niche_discovery*.py

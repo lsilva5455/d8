@@ -34,11 +34,15 @@ def show_menu():
     print("1. 🏛️  Congreso Autónomo (Mejora continua)")
     print("2. 💎 Niche Discovery (Descubrir nichos)")
     print("3. 🧬 Sistema Evolutivo (Darwin)")
-    print("4. 🌐 Orchestrator + Worker (Sistema completo)")
-    print("5. ❌ Salir")
+    print("4. 🎯 Orchestrator (Servidor central)")
+    print("5. 🤖 Worker Groq (Cliente worker)")
+    print("6. 🤖 Worker Gemini (Cliente worker)")
+    print("7. 🤖 Worker DeepSeek (Cliente worker)")
+    print("8. 🌐 Sistema Distribuido Completo")
+    print("9. ❌ Salir")
     print("\n" + "="*60)
     
-    choice = input("\nSelecciona una opción (1-5): ").strip()
+    choice = input("\nSelecciona una opción (1-9): ").strip()
     return choice
 
 def run_congress():
@@ -64,16 +68,51 @@ def run_evolution():
     
     subprocess.run([sys.executable, "-m", "app.evolution.groq_evolution"])
 
+def run_orchestrator():
+    """Ejecuta el orquestador de forma independiente"""
+    print("\n🎯 Iniciando Orchestrator...")
+    print("El orquestador gestiona workers y asigna tareas.\n")
+    print("Endpoints disponibles:")
+    print("  - POST /api/tasks/submit")
+    print("  - GET /api/workers/list")
+    print("  - GET /api/stats")
+    print("  - GET /health\n")
+    
+    subprocess.run([sys.executable, "-m", "app.orchestrator_app"])
+
+def run_worker_groq():
+    """Ejecuta worker Groq"""
+    print("\n🤖 Iniciando Worker Groq...")
+    print("Worker conectará con orchestrator y procesará tareas.\n")
+    
+    script_path = Path(__file__).parent / "app" / "distributed" / "worker_groq.py"
+    subprocess.run([sys.executable, str(script_path)])
+
+def run_worker_gemini():
+    """Ejecuta worker Gemini"""
+    print("\n🤖 Iniciando Worker Gemini...")
+    print("Worker conectará con orchestrator y procesará tareas.\n")
+    
+    script_path = Path(__file__).parent / "app" / "distributed" / "worker_gemini_resilient.py"
+    subprocess.run([sys.executable, str(script_path)])
+
+def run_worker_deepseek():
+    """Ejecuta worker DeepSeek"""
+    print("\n🤖 Iniciando Worker DeepSeek...")
+    print("Worker local con DeepSeek (zero-cost).\n")
+    print("NOTA: Requiere Ollama instalado y modelo deepseek-r1:8b\n")
+    
+    script_path = Path(__file__).parent / "app" / "distributed" / "worker_fixed.py"
+    subprocess.run([sys.executable, str(script_path)])
+
 def run_distributed():
     """Ejecuta sistema completo"""
-    print("\n🌐 Iniciando Sistema Distribuido...")
+    print("\n🌐 Iniciando Sistema Distribuido Completo...")
     print("\nIMPORTANTE: Debes ejecutar en terminales separadas:")
     print("\nTerminal 1 (Orchestrator):")
-    print("  python -m app.main")
-    print("\nTerminal 2 (Worker):")
-    print("  python -m app.distributed.worker_groq")
-    print("\nO usa el launcher automático:")
-    print("  .\\scripts\\launch\\launch_distributed.bat")
+    print("  python start_d8.py  (opción 4)")
+    print("\nTerminal 2+ (Workers):")
+    print("  python start_d8.py  (opciones 5, 6, 7)")
     print()
 
 def main():
@@ -88,12 +127,20 @@ def main():
         elif choice == "3":
             run_evolution()
         elif choice == "4":
-            run_distributed()
+            run_orchestrator()
         elif choice == "5":
+            run_worker_groq()
+        elif choice == "6":
+            run_worker_gemini()
+        elif choice == "7":
+            run_worker_deepseek()
+        elif choice == "8":
+            run_distributed()
+        elif choice == "9":
             print("\n👋 ¡Hasta luego!\n")
             sys.exit(0)
         else:
-            print("\n❌ Opción inválida. Selecciona 1-5.\n")
+            print("\n❌ Opción inválida. Selecciona 1-9.\n")
             continue
         
         # Preguntar si quiere continuar
