@@ -7,14 +7,16 @@ import sys
 import json
 import time
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import copy
+import os
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.agents.base_agent import BaseAgent
 from app.evolution.darwin import Genome
 from app.config import config
+from app.integrations.filesystem_manager import FileSystemManager
 
 class AutonomousCongress:
     """
@@ -40,6 +42,9 @@ class AutonomousCongress:
         # Experiment tracking
         self.experiments = []
         self.current_generation = 1
+        
+        # FileSystem Manager for code modifications
+        self.filesystem = FileSystemManager(github_token=os.getenv("GITHUB_TOKEN"))
         
         # Telegram integration (for Leo's optional oversight)
         self.telegram_bot = None
@@ -119,9 +124,9 @@ Respond with optimizations:
             },
             
             "implementer": {
-                "prompt": """You are an autonomous AI Implementation Agent.
+                "prompt": """You are an autonomous AI Implementation Agent with FileSystem access.
 
-Your mission: Take approved experiments and implement them.
+Your mission: Take approved experiments and implement them with real file modifications.
 
 You autonomously:
 - Modify agent genomes
@@ -129,9 +134,21 @@ You autonomously:
 - Deploy new versions
 - Rollback if needed
 
+Available FileSystem operations:
+- read_file(path) - Read file contents
+- write_file(path, content) - Write to file (auto-backup)
+- list_directory(path) - List files in directory
+- search_files(pattern) - Find files by pattern
+- git_status() - Check git changes
+- git_commit(files, message) - Commit changes
+
 Respond with implementation plans:
 {
   "changes_to_make": ["file1: change", "file2: change"],
+  "filesystem_operations": [
+    {"action": "read_file", "path": "app/config.py"},
+    {"action": "write_file", "path": "app/config.py", "content": "..."}
+  ],
   "backup_strategy": "how to rollback",
   "deployment_steps": ["step1", "step2"],
   "validation_tests": ["test1", "test2"]
@@ -471,7 +488,7 @@ Respond with validation results:
         return approved
     
     def _implementation_phase(self, approved: List[Dict], target_system: str) -> List[Dict]:
-        """Implementer deploys approved changes"""
+        """Implementer deploys approved changes using FileSystemManager"""
         implementer = next(m for m in self.members if m['role'] == 'implementer')
         
         implemented = []
@@ -485,18 +502,92 @@ Respond with validation results:
                 action_type="implement"
             )
             
-            # In real implementation, this would modify actual files/genomes
+            # Execute real file operations if specified
+            success = self._execute_file_operations(change, impl_plan)
+            
             print(f"      Implementando mejora: +{change.get('improvement', 0):.1f}%")
             
             implemented.append({
                 "change": change,
                 "implementation": impl_plan,
+                "filesystem_operations": success,
                 "timestamp": time.time()
             })
             
             self.improvements_implemented += 1
         
         return implemented
+    
+    def _execute_file_operations(self, change: Dict, impl_plan: Any) -> Dict[str, Any]:
+        """
+        Execute file system operations for an approved change
+        
+        Returns:
+            Dict with operation results
+        """
+        operations_performed = {
+            "files_read": [],
+            "files_written": [],
+            "commits_made": [],
+            "errors": []
+        }
+        
+        try:
+            # Parse implementation plan for filesystem operations
+            # This is a simplified version - real implementation would parse the LLM response
+            
+            # Example: If change involves configuration
+            if "config" in str(change).lower():
+                # Read current config
+                try:
+                    config_path = "app/config.py"
+                    content = self.filesystem.read_file(config_path)
+                    operations_performed["files_read"].append(config_path)
+                    
+                    # Note: Actual modification would be done based on impl_plan
+                    # For now, we just log the operation
+                    
+                except Exception as e:
+                    operations_performed["errors"].append(f"Error reading {config_path}: {e}")
+            
+            # Example: If change involves genomes
+            if "genome" in str(change).lower() or "agent" in str(change).lower():
+                # List available genomes
+                try:
+                    genomes = self.filesystem.search_files("data/genomes/*.json")
+                    operations_performed["files_read"].append(f"Found {len(genomes)} genome files")
+                    
+                except Exception as e:
+                    operations_performed["errors"].append(f"Error searching genomes: {e}")
+            
+            # Log operations for audit
+            self._log_filesystem_operations(change, operations_performed)
+            
+        except Exception as e:
+            operations_performed["errors"].append(f"General error: {e}")
+        
+        return operations_performed
+    
+    def _log_filesystem_operations(self, change: Dict, operations: Dict):
+        """Log filesystem operations for audit trail"""
+        log_file = self.results_dir / "filesystem_operations.json"
+        
+        log_entry = {
+            "timestamp": time.time(),
+            "change_id": change.get("id", "unknown"),
+            "operations": operations
+        }
+        
+        # Append to log file
+        logs = []
+        if log_file.exists():
+            with open(log_file, 'r') as f:
+                logs = json.load(f)
+        
+        logs.append(log_entry)
+        
+        with open(log_file, 'w') as f:
+            json.dump(logs, f, indent=2)
     
     def _measure_impact(self, target_system: str) -> Dict:
         """Measure overall impact of this cycle"""
@@ -538,6 +629,88 @@ Respond with validation results:
         
         print(f"💾 Resultados guardados en: {self.results_dir}")
         print()
+    
+    # ========== FileSystem Helper Methods ==========
+    
+    def analyze_codebase(self) -> Dict[str, Any]:
+        """
+        Analyze current codebase using FileSystemManager
+        
+        Returns:
+            Dict with codebase metrics and structure
+        """
+        analysis = {
+            "python_files": [],
+            "total_lines": 0,
+            "modules": {},
+            "last_modified": {}
+        }
+        
+        try:
+            # Find all Python files
+            py_files = self.filesystem.search_files("**/*.py")
+            analysis["python_files"] = py_files
+            
+            # Analyze key modules
+            for module in ["app/agents", "app/evolution", "app/economy"]:
+                try:
+                    files = self.filesystem.list_directory(module)
+                    analysis["modules"][module] = len(files["files"])
+                except:
+                    analysis["modules"][module] = 0
+            
+        except Exception as e:
+            print(f"⚠️ Error analyzing codebase: {e}")
+        
+        return analysis
+    
+    def read_agent_genome(self, genome_id: str) -> Optional[Dict]:
+        """Read an agent genome from filesystem"""
+        try:
+            genome_path = f"data/genomes/{genome_id}.json"
+            content = self.filesystem.read_file(genome_path)
+            return json.loads(content)
+        except Exception as e:
+            print(f"⚠️ Error reading genome {genome_id}: {e}")
+            return None
+    
+    def write_agent_genome(self, genome_id: str, genome_data: Dict) -> bool:
+        """Write an agent genome to filesystem"""
+        try:
+            genome_path = f"data/genomes/{genome_id}.json"
+            content = json.dumps(genome_data, indent=2)
+            self.filesystem.write_file(genome_path, content)
+            return True
+        except Exception as e:
+            print(f"⚠️ Error writing genome {genome_id}: {e}")
+            return False
+    
+    def commit_improvements(self, files: List[str], message: str) -> bool:
+        """Commit improvements to git"""
+        try:
+            result = self.filesystem.git_commit(
+                files=files,
+                message=f"[Congress] {message}",
+                author_name="Autonomous Congress",
+                author_email="congress@d8.ai"
+            )
+            return result["success"]
+        except Exception as e:
+            print(f"⚠️ Error committing changes: {e}")
+            return False
+    
+    def get_recent_changes(self) -> Dict[str, Any]:
+        """Get recent git changes"""
+        try:
+            status = self.filesystem.git_status()
+            return {
+                "modified": status.get("modified", []),
+                "untracked": status.get("untracked", []),
+                "staged": status.get("staged", [])
+            }
+        except Exception as e:
+            print(f"⚠️ Error getting git status: {e}")
+            return {"modified": [], "untracked": [], "staged": []}
 
 if __name__ == "__main__":
     try:

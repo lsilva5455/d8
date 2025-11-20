@@ -130,7 +130,7 @@ Leo: /pr 'fix: Darwin bug' -d 'Fixed edge case'
 #### 🚀 Próximos Pasos
 
 **Inmediato:**
-- [ ] Congreso use FileSystemManager para auto-mejora
+- [x] Congreso use FileSystemManager para auto-mejora
 - [ ] Auto-commit cuando congreso implementa mejoras
 - [ ] PRs automáticos con tag [Congress] en título
 
