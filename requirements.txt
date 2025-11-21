@@ -32,7 +32,7 @@ python-wordpress-xmlrpc==2.3   # WordPress API client
 
 # Automation (opcional - según descubrimientos autónomos)
 Appium-Python-Client==3.1.0    # Mobile automation
-uiautomator2==3.0.0            # Android automation
+# uiautomator2==3.0.0 # Android automation (no disponible, usar 3.5.0 si se necesita)
 
 # Data Processing
 pandas==2.1.4
