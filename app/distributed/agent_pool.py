@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+@dataclass
 class AgentPlacement:
     """Información de ubicación de un agente"""
     agent_id: str
@@ -28,6 +29,17 @@ class AgentPlacement:
     placed_at: float = field(default_factory=lambda: datetime.utcnow().timestamp())
     is_temporary: bool = False  # True si fue movido por fallo de slave original
     original_slave_id: Optional[str] = None  # Si es temporal, dónde vivía originalmente
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict for API/serialization"""
+        return {
+            "agent_id": self.agent_id,
+            "slave_id": self.slave_id,
+            "genome": self.genome,
+            "placed_at": self.placed_at,
+            "is_temporary": self.is_temporary,
+            "original_slave_id": self.original_slave_id
+        }
 
 
 class AgentPoolManager:
@@ -84,6 +96,16 @@ class AgentPoolManager:
             del self.placements[agent_id]
             self._save_state()
             logger.info(f"🗑️ Agent {agent_id} unregistered")
+    
+    def get_placement(self, agent_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Obtener placement de un agente (como dict para compatibilidad)
+        
+        Returns:
+            Dict con info de placement o None si no existe
+        """
+        placement = self.placements.get(agent_id)
+        return placement.to_dict() if placement else None
     
     def get_agent_location(self, agent_id: str) -> Optional[str]:
         """Obtener slave_id donde vive el agente"""

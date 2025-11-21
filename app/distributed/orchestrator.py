@@ -69,7 +69,7 @@ class DistributedOrchestrator:
     - Overbooking adaptativo
     """
     
-    def __init__(self):
+    def __init__(self, start_background_threads=True):
         # Slave registry
         self.slaves: Dict[str, Slave] = {}
         
@@ -87,17 +87,32 @@ class DistributedOrchestrator:
         
         # Background threads
         self.active = True
-        
-        # Thread para health monitoring
-        self.health_thread = threading.Thread(target=self._health_monitoring_loop, daemon=True)
-        self.health_thread.start()
-        
-        # Thread para recovery
-        self.recovery_thread = threading.Thread(target=self._recovery_loop, daemon=True)
-        self.recovery_thread.start()
+        self.health_thread = None
+        self.recovery_thread = None
         
         logger.info("🎯 Distributed Orchestrator initialized (Agent Pool Mode)")
         logger.info(f"   Agents in pool: {len(self.agent_pool.placements)}")
+        
+        # Start background threads if requested
+        if start_background_threads:
+            self.start_background_threads()
+    
+    def start_background_threads(self):
+        """Start health and recovery background threads"""
+        if self.health_thread is None or not self.health_thread.is_alive():
+            self.health_thread = threading.Thread(target=self._health_monitoring_loop, daemon=True)
+            self.health_thread.start()
+            logger.info("🔄 Health monitoring thread started")
+        
+        if self.recovery_thread is None or not self.recovery_thread.is_alive():
+            self.recovery_thread = threading.Thread(target=self._recovery_loop, daemon=True)
+            self.recovery_thread.start()
+            logger.info("🔄 Recovery thread started")
+    
+    def stop_background_threads(self):
+        """Stop background threads"""
+        self.active = False
+        logger.info("⏸️  Background threads stopped")
     
     def register_slave(
         self,
@@ -190,11 +205,19 @@ class DistributedOrchestrator:
         Returns:
             agent_id si exitoso, None si no hay slaves disponibles
         """
+        # Construir available_slaves dict para agent_pool
+        available_slaves = {}
+        with self.lock:
+            for slave_id, slave in self.slaves.items():
+                if slave.status == "online":
+                    available_slaves[slave_id] = {
+                        "resources": slave.resources,
+                        "current_agents": slave.agents_registered,
+                        "max_agents": slave.resources.get('max_agents', 10)
+                    }
+        
         # Encontrar mejor slave según agent pool
-        best_slave_id = self.agent_pool.find_best_slave(
-            slaves=self.slaves,
-            overbooking_optimizer=self.overbooking
-        )
+        best_slave_id = self.agent_pool.find_best_slave(available_slaves)
         
         if not best_slave_id:
             logger.error("❌ No slaves available for agent deployment")
@@ -249,7 +272,7 @@ class DistributedOrchestrator:
             self.commands[slave_id].append(command)
         
         # Remover del pool
-        self.agent_pool.remove_agent(agent_id)
+        self.agent_pool.unregister_agent(agent_id)
         
         logger.info(f"💀 Agent destruction scheduled: {agent_id} (was on {slave_id})")
         return True
@@ -318,6 +341,27 @@ class DistributedOrchestrator:
             
             total_agents = len(self.agent_pool.placements)
             
+            # Version compliance (inline para evitar deadlock)
+            expected_branch = "docker-workers"
+            compliant = []
+            non_compliant = []
+            for slave_id, slave in self.slaves.items():
+                if slave.git_branch == expected_branch:
+                    compliant.append(slave_id)
+                else:
+                    non_compliant.append({
+                        "slave_id": slave_id,
+                        "current_branch": slave.git_branch,
+                        "expected_branch": expected_branch
+                    })
+            
+            version_compliance = {
+                "expected_branch": expected_branch,
+                "compliant_count": len(compliant),
+                "non_compliant_count": len(non_compliant),
+                "non_compliant_slaves": non_compliant
+            }
+            
             return {
                 "cluster": {
                     "slaves_total": len(self.slaves),
@@ -339,7 +383,7 @@ class DistributedOrchestrator:
                     device_type: self.overbooking.get_overbooking_factor(device_type)
                     for device_type in set(s.device_type for s in self.slaves.values())
                 },
-                "version_compliance": self._check_version_compliance()
+                "version_compliance": version_compliance
             }
     
     def get_slaves(self) -> Dict[str, Slave]:
@@ -433,11 +477,19 @@ class DistributedOrchestrator:
         """
         Recovery temporal: mover agente a otro slave pero mantener registro del original
         """
+        # Construir available_slaves
+        available_slaves = {}
+        with self.lock:
+            for slave_id, slave in self.slaves.items():
+                if slave.status == "online":
+                    available_slaves[slave_id] = {
+                        "resources": slave.resources,
+                        "current_agents": slave.agents_registered,
+                        "max_agents": slave.resources.get('max_agents', 10)
+                    }
+        
         # Buscar slave temporal
-        temp_slave_id = self.agent_pool.find_best_slave(
-            slaves=self.slaves,
-            overbooking_optimizer=self.overbooking
-        )
+        temp_slave_id = self.agent_pool.find_best_slave(available_slaves)
         
         if not temp_slave_id:
             logger.error(f"❌ No slaves available for temporary recovery of {agent_id}")
@@ -471,11 +523,19 @@ class DistributedOrchestrator:
         """
         Recovery permanente: mover agente definitivamente y olvidar slave original
         """
+        # Construir available_slaves
+        available_slaves = {}
+        with self.lock:
+            for slave_id, slave in self.slaves.items():
+                if slave.status == "online":
+                    available_slaves[slave_id] = {
+                        "resources": slave.resources,
+                        "current_agents": slave.agents_registered,
+                        "max_agents": slave.resources.get('max_agents', 10)
+                    }
+        
         # Buscar nuevo slave permanente
-        new_slave_id = self.agent_pool.find_best_slave(
-            slaves=self.slaves,
-            overbooking_optimizer=self.overbooking
-        )
+        new_slave_id = self.agent_pool.find_best_slave(available_slaves)
         
         if not new_slave_id:
             logger.error(f"❌ No slaves available for permanent recovery of {agent_id}")
