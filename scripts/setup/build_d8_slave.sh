@@ -3,7 +3,7 @@
 # build_d8_slave.sh - Instalación automática de D8 Slave
 # 
 # USO: 
-#   curl -sSL https://raw.githubusercontent.com/lsilva5455/d8/docker-workers/scripts/setup/build_d8_slave.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/lsilva5455/d8/main/scripts/setup/build_d8_slave.sh | bash
 #   O simplemente: bash build_d8_slave.sh
 #
 # DESCRIPCIÓN:
@@ -26,7 +26,7 @@ NC='\033[0m' # No Color
 # Variables
 D8_DIR="$HOME/d8"
 D8_REPO="https://github.com/lsilva5455/d8.git"
-D8_BRANCH="docker-workers"
+D8_BRANCH="main"
 SLAVE_PORT=7600
 LOG_FILE="$HOME/d8_slave_install.log"
 

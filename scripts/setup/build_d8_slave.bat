@@ -17,7 +17,7 @@ setlocal enabledelayedexpansion
 REM Variables
 set "D8_DIR=%USERPROFILE%\d8"
 set "D8_REPO=https://github.com/lsilva5455/d8.git"
-set "D8_BRANCH=docker-workers"
+set "D8_BRANCH=main"
 set "SLAVE_PORT=7600"
 set "LOG_FILE=%USERPROFILE%\d8_slave_install.log"
 

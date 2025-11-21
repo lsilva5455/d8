@@ -56,7 +56,7 @@ class FakeSlaveSimulator:
                 "gpu": False
             },
             "version": {
-                "git_branch": "docker-workers",
+                "git_branch": "main",
                 "git_commit": "abc123def",
                 "python_version": "3.11.2"
             }
@@ -75,7 +75,7 @@ class FakeSlaveSimulator:
                 "agents_latency_avg": 120
             },
             "version": {
-                "git_branch": "docker-workers",
+                "git_branch": "main",
                 "git_commit": "abc123def",
                 "python_version": "3.11.2"
             }
