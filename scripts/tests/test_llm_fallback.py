@@ -13,7 +13,7 @@ Date: 2025-11-21
 
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import logging
 from app.agents.base_agent import BaseAgent

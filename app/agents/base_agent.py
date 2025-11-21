@@ -176,12 +176,17 @@ class BaseAgent:
             tokens_used = response.get("tokens_used", 0)
             
             try:
-                result = json.loads(content)
-            except json.JSONDecodeError:
+                # Si content ya es un dict, usarlo directamente
+                if isinstance(content, dict):
+                    result = content
+                else:
+                    # Si es string, intentar parsear como JSON
+                    result = json.loads(content)
+            except (json.JSONDecodeError, TypeError):
                 # If not JSON, wrap in generic format
                 result = {
                     "action": action_type,
-                    "response": content,
+                    "response": str(content),
                     "success": True
                 }
             
