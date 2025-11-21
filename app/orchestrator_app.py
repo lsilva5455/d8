@@ -1,17 +1,31 @@
 """
-D8 Orchestrator Flask Application
-===================================
-Expone API REST para gestión de workers y tareas distribuidas.
+D8 Orchestrator Flask Application - REFACTORED
+===============================================
+API REST para gestión de slaves y agentes distribuidos.
+
+NUEVO MODELO: Slaves hosting D8 Agents (no más workers/tasks)
 
 Endpoints:
-    POST   /api/workers/register          - Registrar worker
-    POST   /api/workers/{id}/heartbeat    - Heartbeat de worker
-    GET    /api/workers/{id}/tasks        - Obtener tarea para worker
-    POST   /api/tasks/submit               - Crear nueva tarea
-    POST   /api/tasks/{id}/result          - Reportar resultado
-    GET    /api/tasks/status/{id}          - Consultar estado de tarea
-    GET    /api/workers/list               - Listar workers
-    GET    /health                         - Health check
+    # Slave Management
+    POST   /api/slaves/register                - Registrar slave
+    POST   /api/slaves/{id}/heartbeat          - Heartbeat de slave
+    POST   /api/slaves/{id}/unregister         - Desregistrar slave
+    GET    /api/slaves/{id}/commands           - Obtener comandos para slave
+    GET    /api/slaves/list                    - Listar slaves
+    
+    # Agent Management
+    POST   /api/agents/deploy                  - Deploy nuevo agente
+    POST   /api/agents/{id}/destroy            - Destruir agente
+    POST   /api/agents/{id}/update_genome      - Actualizar genome
+    GET    /api/agents/placements              - Ver distribución de agentes
+    
+    # Dashboard & Monitoring
+    GET    /api/cluster/stats                  - Estadísticas del cluster
+    GET    /api/cluster/dashboard              - Dashboard completo
+    GET    /health                             - Health check
+    
+    # LLM Manager
+    GET    /api/llm/health                     - Estado LLM Fallback Manager
 """
 
 from flask import Flask, request, jsonify
@@ -44,31 +58,43 @@ def create_orchestrator_app() -> Flask:
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint"""
+        stats = orchestrator.get_stats()
+        
         return jsonify({
             "status": "healthy",
             "service": "d8-orchestrator",
             "timestamp": datetime.utcnow().isoformat(),
-            "workers_online": len([w for w in orchestrator.workers.values() if w.status in ["online", "busy"]]),
-            "tasks_pending": len([t for t in orchestrator.tasks.values() if t.status == "pending"]),
-            "tasks_in_progress": len([t for t in orchestrator.tasks.values() if t.status == "assigned"])
+            "slaves_online": stats['cluster']['slaves_online'],
+            "agents_total": stats['agents']['total'],
+            "agents_active": stats['agents']['active']
         })
     
     # ==========================================
-    # WORKER MANAGEMENT
+    # SLAVE MANAGEMENT
     # ==========================================
     
-    @app.route('/api/workers/register', methods=['POST'])
-    def register_worker():
+    @app.route('/api/slaves/register', methods=['POST'])
+    def register_slave():
         """
-        Registrar nuevo worker
+        Registrar nuevo slave
         
         Request body:
         {
-            "worker_id": "groq-worker-1",
-            "worker_type": "groq",
+            "slave_id": "raspi-001",
+            "device_type": "raspberry_pi_4",
+            "resources": {
+                "cpu_cores": 4,
+                "memory_gb": 8,
+                "max_agents": 8
+            },
             "capabilities": {
-                "max_tokens": 2000,
-                "models": ["llama-3.3-70b"]
+                "llm_providers": ["groq"],
+                "gpu": false
+            },
+            "version": {
+                "git_branch": "docker-workers",
+                "git_commit": "abc123",
+                "python_version": "3.11.2"
             }
         }
         """
@@ -76,278 +102,333 @@ def create_orchestrator_app() -> Flask:
             data = request.json
             
             # Validar campos requeridos
-            required = ['worker_id', 'worker_type', 'capabilities']
+            required = ['slave_id', 'device_type', 'resources', 'capabilities', 'version']
             for field in required:
                 if field not in data:
                     return jsonify({"error": f"Missing field: {field}"}), 400
             
-            # Registrar worker
-            success = orchestrator.register_worker(
-                worker_id=data['worker_id'],
-                worker_type=data['worker_type'],
-                capabilities=data['capabilities']
+            # Registrar slave
+            success = orchestrator.register_slave(
+                slave_id=data['slave_id'],
+                device_type=data['device_type'],
+                resources=data['resources'],
+                capabilities=data['capabilities'],
+                version=data['version']
             )
             
             if success:
                 return jsonify({
                     "status": "registered",
-                    "worker_id": data['worker_id'],
-                    "message": "Worker registered successfully"
+                    "slave_id": data['slave_id'],
+                    "message": "Slave registered successfully"
                 }), 200
             else:
                 return jsonify({"error": "Registration failed"}), 500
                 
         except Exception as e:
-            logger.error(f"Error registering worker: {e}")
+            logger.error(f"Error registering slave: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/workers/<worker_id>/heartbeat', methods=['POST'])
-    def worker_heartbeat(worker_id: str):
+    @app.route('/api/slaves/<slave_id>/heartbeat', methods=['POST'])
+    def slave_heartbeat(slave_id: str):
         """
-        Recibir heartbeat de worker
-        Workers deben enviar esto cada 30s para indicar que están vivos
+        Recibir heartbeat de slave
+        
+        Request body:
+        {
+            "agents_status": {
+                "agent_abc123": {
+                    "status": "active",
+                    "uptime": 3600,
+                    "last_action": "search_info"
+                }
+            },
+            "resources_usage": {
+                "cpu_percent": 45.2,
+                "memory_percent": 62.0,
+                "agents_latency_avg": 120
+            },
+            "version": {
+                "git_branch": "docker-workers",
+                "git_commit": "abc123",
+                "python_version": "3.11.2"
+            }
+        }
         """
         try:
-            orchestrator.update_heartbeat(worker_id)
+            data = request.json
+            
+            orchestrator.update_slave_heartbeat(
+                slave_id=slave_id,
+                agents_status=data.get('agents_status', {}),
+                resources_usage=data.get('resources_usage', {}),
+                version=data.get('version', {})
+            )
+            
             return jsonify({"status": "ok"}), 200
+            
         except Exception as e:
-            logger.error(f"Error processing heartbeat: {e}")
+            logger.error(f"Error processing heartbeat from {slave_id}: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/workers/<worker_id>/tasks', methods=['GET'])
-    def get_task_for_worker(worker_id: str):
+    @app.route('/api/slaves/<slave_id>/commands', methods=['GET'])
+    def get_slave_commands(slave_id: str):
         """
-        Worker solicita tarea
-        Retorna tarea si hay disponible, o null si no hay trabajo
+        Slave solicita comandos pendientes
         
         Response:
         {
-            "task": {
-                "task_id": "uuid",
-                "type": "agent_action",
-                "data": {...}
-            }
+            "commands": [
+                {
+                    "type": "deploy_agent",
+                    "agent_id": "agent_xyz789",
+                    "genome": {...}
+                },
+                {
+                    "type": "destroy_agent",
+                    "agent_id": "agent_old123"
+                }
+            ]
         }
         """
         try:
-            task = orchestrator.get_task_for_worker(worker_id)
-            
-            if task:
-                return jsonify({
-                    "task": {
-                        "task_id": task.task_id,
-                        "type": task.type,
-                        "data": task.data,
-                        "priority": task.priority
-                    }
-                }), 200
-            else:
-                return jsonify({"task": None}), 200
-                
-        except Exception as e:
-            logger.error(f"Error getting task: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    @app.route('/api/workers/list', methods=['GET'])
-    def list_workers():
-        """Listar todos los workers registrados"""
-        try:
-            workers_data = []
-            for worker_id, worker in orchestrator.workers.items():
-                workers_data.append({
-                    "worker_id": worker_id,
-                    "worker_type": worker.worker_type,
-                    "status": worker.status,
-                    "last_heartbeat": worker.last_heartbeat,
-                    "tasks_completed": worker.tasks_completed,
-                    "tasks_failed": worker.tasks_failed,
-                    "capabilities": worker.capabilities
-                })
+            commands = orchestrator.get_commands_for_slave(slave_id)
             
             return jsonify({
-                "workers": workers_data,
-                "total": len(workers_data)
+                "commands": commands,
+                "count": len(commands)
             }), 200
             
         except Exception as e:
-            logger.error(f"Error listing workers: {e}")
+            logger.error(f"Error getting commands for {slave_id}: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/workers/<worker_id>/unregister', methods=['POST'])
-    def unregister_worker(worker_id: str):
-        """Desregistrar worker"""
+    @app.route('/api/slaves/<slave_id>/unregister', methods=['POST'])
+    def unregister_slave(slave_id: str):
+        """Desregistrar slave"""
         try:
-            orchestrator.unregister_worker(worker_id)
+            orchestrator.unregister_slave(slave_id)
             return jsonify({"status": "unregistered"}), 200
         except Exception as e:
-            logger.error(f"Error unregistering worker: {e}")
+            logger.error(f"Error unregistering slave: {e}")
             return jsonify({"error": str(e)}), 500
     
-    # ==========================================
-    # TASK MANAGEMENT
-    # ==========================================
-    
-    @app.route('/api/tasks/submit', methods=['POST'])
-    def submit_task():
-        """
-        Crear nueva tarea
-        
-        Request body:
-        {
-            "type": "agent_action",
-            "data": {
-                "messages": [...],
-                "model": "llama-3.3-70b",
-                "temperature": 0.8
-            },
-            "priority": 5
-        }
-        """
+    @app.route('/api/slaves/list', methods=['GET'])
+    def list_slaves():
+        """Listar todos los slaves registrados"""
         try:
-            data = request.json
+            slaves = orchestrator.get_slaves()
             
-            # Validar campos
-            if 'type' not in data or 'data' not in data:
-                return jsonify({"error": "Missing 'type' or 'data' field"}), 400
-            
-            # Crear tarea
-            task_id = orchestrator.submit_task(
-                task_type=data['type'],
-                task_data=data['data'],
-                priority=data.get('priority', 5)
-            )
+            slaves_data = []
+            for slave_id, slave in slaves.items():
+                slaves_data.append({
+                    "slave_id": slave_id,
+                    "device_type": slave.device_type,
+                    "status": slave.status,
+                    "resources": slave.resources,
+                    "agents_registered": slave.agents_registered,
+                    "agents_active": slave.agents_active,
+                    "last_heartbeat": slave.last_heartbeat,
+                    "version": {
+                        "git_branch": slave.git_branch,
+                        "git_commit": slave.git_commit,
+                        "python_version": slave.python_version
+                    }
+                })
             
             return jsonify({
-                "task_id": task_id,
-                "status": "submitted",
-                "message": "Task queued successfully"
-            }), 201
+                "slaves": slaves_data,
+                "total": len(slaves_data),
+                "online": len([s for s in slaves.values() if s.status == "online"])
+            }), 200
             
         except Exception as e:
-            logger.error(f"Error submitting task: {e}")
+            logger.error(f"Error listing slaves: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/tasks/<task_id>/result', methods=['POST'])
-    def report_task_result(task_id: str):
+    # ==========================================
+    # AGENT MANAGEMENT
+    # ==========================================
+    
+    @app.route('/api/agents/deploy', methods=['POST'])
+    def deploy_agent():
         """
-        Worker reporta resultado de tarea
+        Deploy nuevo agente en el mejor slave disponible
         
         Request body:
         {
-            "worker_id": "groq-worker-1",
-            "result": {
-                "success": true,
-                "output": "...",
-                "tokens_used": 150
+            "genome": {
+                "agent_id": "agent_xyz",  # Opcional, se genera si no se provee
+                "prompt": "You are...",
+                "actions": ["search_info", "write_code"],
+                "params": {
+                    "temperature": 0.8,
+                    "model": "llama-3.3-70b"
+                }
             }
         }
         """
         try:
             data = request.json
             
-            if 'worker_id' not in data or 'result' not in data:
-                return jsonify({"error": "Missing 'worker_id' or 'result'"}), 400
+            if 'genome' not in data:
+                return jsonify({"error": "Missing 'genome' field"}), 400
             
-            orchestrator.report_result(
-                task_id=task_id,
-                worker_id=data['worker_id'],
-                result=data['result']
-            )
+            agent_id = orchestrator.deploy_agent(genome=data['genome'])
             
-            return jsonify({"status": "received"}), 200
-            
+            if agent_id:
+                return jsonify({
+                    "status": "deployed",
+                    "agent_id": agent_id,
+                    "message": "Agent deployment scheduled"
+                }), 201
+            else:
+                return jsonify({"error": "No slaves available"}), 503
+                
         except Exception as e:
-            logger.error(f"Error reporting result: {e}")
+            logger.error(f"Error deploying agent: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/tasks/status/<task_id>', methods=['GET'])
-    def get_task_status(task_id: str):
-        """Consultar estado de tarea"""
+    @app.route('/api/agents/<agent_id>/destroy', methods=['POST'])
+    def destroy_agent(agent_id: str):
+        """Destruir agente existente"""
         try:
-            task = orchestrator.tasks.get(task_id)
+            success = orchestrator.destroy_agent(agent_id)
             
-            if not task:
-                return jsonify({"error": "Task not found"}), 404
+            if success:
+                return jsonify({
+                    "status": "destroyed",
+                    "agent_id": agent_id,
+                    "message": "Agent destruction scheduled"
+                }), 200
+            else:
+                return jsonify({"error": "Agent not found"}), 404
+                
+        except Exception as e:
+            logger.error(f"Error destroying agent: {e}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/agents/<agent_id>/update_genome', methods=['POST'])
+    def update_agent_genome(agent_id: str):
+        """
+        Actualizar genome de agente
+        
+        Request body:
+        {
+            "genome": {
+                "prompt": "You are...",
+                "actions": ["new_action"],
+                "params": {...}
+            }
+        }
+        """
+        try:
+            data = request.json
+            
+            if 'genome' not in data:
+                return jsonify({"error": "Missing 'genome' field"}), 400
+            
+            success = orchestrator.update_agent_genome(
+                agent_id=agent_id,
+                genome=data['genome']
+            )
+            
+            if success:
+                return jsonify({
+                    "status": "updated",
+                    "agent_id": agent_id,
+                    "message": "Genome update scheduled"
+                }), 200
+            else:
+                return jsonify({"error": "Agent not found"}), 404
+                
+        except Exception as e:
+            logger.error(f"Error updating agent genome: {e}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/agents/placements', methods=['GET'])
+    def get_agent_placements():
+        """Ver distribución de agentes en el cluster"""
+        try:
+            placements = orchestrator.get_agent_placements()
+            
+            # Agrupar por slave
+            by_slave = {}
+            for agent_id, placement in placements.items():
+                slave_id = placement['slave_id']
+                if slave_id not in by_slave:
+                    by_slave[slave_id] = []
+                by_slave[slave_id].append(agent_id)
             
             return jsonify({
-                "task_id": task_id,
-                "type": task.type,
-                "status": task.status,
-                "assigned_to": task.assigned_to,
-                "created_at": task.created_at,
-                "completed_at": task.completed_at,
-                "result": task.result
+                "placements": placements,
+                "total_agents": len(placements),
+                "by_slave": by_slave
             }), 200
             
         except Exception as e:
-            logger.error(f"Error getting task status: {e}")
+            logger.error(f"Error getting placements: {e}")
             return jsonify({"error": str(e)}), 500
     
-    @app.route('/api/tasks/queue', methods=['GET'])
-    def get_task_queue():
-        """Ver estado de la cola de tareas"""
+    # ==========================================
+    # DASHBOARD & CLUSTER MONITORING
+    # ==========================================
+    
+    @app.route('/api/cluster/stats', methods=['GET'])
+    def get_cluster_stats():
+        """Estadísticas del cluster"""
         try:
-            queue_data = []
-            for task in orchestrator.task_queue:
-                queue_data.append({
-                    "task_id": task.task_id,
-                    "type": task.type,
-                    "priority": task.priority,
-                    "status": task.status,
-                    "created_at": task.created_at
+            stats = orchestrator.get_stats()
+            return jsonify(stats), 200
+        except Exception as e:
+            logger.error(f"Error getting cluster stats: {e}")
+            return jsonify({"error": str(e)}), 500
+    
+    @app.route('/api/cluster/dashboard', methods=['GET'])
+    def get_dashboard():
+        """Dashboard completo con toda la información del cluster"""
+        try:
+            stats = orchestrator.get_stats()
+            slaves = orchestrator.get_slaves()
+            placements = orchestrator.get_agent_placements()
+            
+            # Agrupar agents por slave
+            agents_by_slave = {}
+            for agent_id, placement in placements.items():
+                slave_id = placement['slave_id']
+                if slave_id not in agents_by_slave:
+                    agents_by_slave[slave_id] = []
+                agents_by_slave[slave_id].append({
+                    "agent_id": agent_id,
+                    "placed_at": placement.get('placed_at')
+                })
+            
+            # Formato slaves para dashboard
+            slaves_info = []
+            for slave_id, slave in slaves.items():
+                slaves_info.append({
+                    "slave_id": slave_id,
+                    "device_type": slave.device_type,
+                    "status": slave.status,
+                    "resources": slave.resources,
+                    "agents": agents_by_slave.get(slave_id, []),
+                    "agents_count": len(agents_by_slave.get(slave_id, [])),
+                    "agents_active": slave.agents_active,
+                    "last_heartbeat": slave.last_heartbeat,
+                    "version": {
+                        "git_branch": slave.git_branch,
+                        "git_commit": slave.git_commit[:7] if slave.git_commit else "unknown"
+                    }
                 })
             
             return jsonify({
-                "queue": queue_data,
-                "pending": len([t for t in orchestrator.tasks.values() if t.status == "pending"]),
-                "assigned": len([t for t in orchestrator.tasks.values() if t.status == "assigned"]),
-                "completed": len([t for t in orchestrator.tasks.values() if t.status == "completed"]),
-                "failed": len([t for t in orchestrator.tasks.values() if t.status == "failed"])
+                "summary": stats,
+                "slaves": slaves_info,
+                "timestamp": datetime.utcnow().isoformat()
             }), 200
             
         except Exception as e:
-            logger.error(f"Error getting queue: {e}")
-            return jsonify({"error": str(e)}), 500
-    
-    # ==========================================
-    # STATS & MONITORING
-    # ==========================================
-    
-    @app.route('/api/stats', methods=['GET'])
-    def get_stats():
-        """Estadísticas del sistema"""
-        try:
-            online_workers = [w for w in orchestrator.workers.values() if w.status in ["online", "busy"]]
-            
-            return jsonify({
-                "workers": {
-                    "total": len(orchestrator.workers),
-                    "online": len(online_workers),
-                    "busy": len([w for w in online_workers if w.status == "busy"]),
-                    "by_type": {
-                        worker_type: len([w for w in online_workers if w.worker_type == worker_type])
-                        for worker_type in set(w.worker_type for w in orchestrator.workers.values())
-                    }
-                },
-                "tasks": {
-                    "total": len(orchestrator.tasks),
-                    "pending": len([t for t in orchestrator.tasks.values() if t.status == "pending"]),
-                    "assigned": len([t for t in orchestrator.tasks.values() if t.status == "assigned"]),
-                    "completed": len([t for t in orchestrator.tasks.values() if t.status == "completed"]),
-                    "failed": len([t for t in orchestrator.tasks.values() if t.status == "failed"])
-                },
-                "performance": {
-                    "total_completed": sum(w.tasks_completed for w in orchestrator.workers.values()),
-                    "total_failed": sum(w.tasks_failed for w in orchestrator.workers.values()),
-                    "success_rate": (
-                        sum(w.tasks_completed for w in orchestrator.workers.values()) / 
-                        max(1, sum(w.tasks_completed + w.tasks_failed for w in orchestrator.workers.values()))
-                    ) * 100
-                }
-            }), 200
-            
-        except Exception as e:
-            logger.error(f"Error getting stats: {e}")
+            logger.error(f"Error getting dashboard: {e}")
             return jsonify({"error": str(e)}), 500
     
     # ==========================================
