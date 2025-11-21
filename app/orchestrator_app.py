@@ -350,6 +350,42 @@ def create_orchestrator_app() -> Flask:
             logger.error(f"Error getting stats: {e}")
             return jsonify({"error": str(e)}), 500
     
+    # ==========================================
+    # LLM FALLBACK MANAGER STATUS
+    # ==========================================
+    
+    @app.route('/api/llm/health', methods=['GET'])
+    def llm_health():
+        """
+        Estado de salud del LLM Fallback Manager
+        
+        Returns:
+        {
+            "total_requests": 123,
+            "congress_escalations": 5,
+            "providers": {
+                "groq": {
+                    "is_available": true,
+                    "consecutive_failures": 0,
+                    "success_rate": 95.2,
+                    "in_cooldown": false
+                },
+                ...
+            }
+        }
+        """
+        try:
+            from app.llm_manager_singleton import get_llm_manager
+            llm_manager = get_llm_manager()
+            
+            health_report = llm_manager.get_health_report()
+            
+            return jsonify(health_report), 200
+            
+        except Exception as e:
+            logger.error(f"Error getting LLM health: {e}")
+            return jsonify({"error": str(e)}), 500
+    
     logger.info("🎯 Orchestrator Flask app created")
     return app
 

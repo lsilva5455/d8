@@ -1,7 +1,7 @@
 """
 Base Agent - The Protagonist
 Autonomous AI agent with genetic material (genome) that can act and evolve
-Uses Groq for fast, low-cost decision making
+Uses LLM Fallback Manager for robust AI calls with automatic fallback
 Integrated with D8 Economy System for revenue tracking
 """
 
@@ -11,7 +11,6 @@ from datetime import datetime
 import json
 import logging
 import uuid
-from groq import Groq
 from app.evolution.darwin import Genome
 
 # Import economy system components
@@ -75,7 +74,7 @@ class BaseAgent:
     
     The agent:
     1. Loads its genetic material (system prompt)
-    2. Uses Groq for fast decision-making
+    2. Uses LLM Fallback Manager for robust AI calls
     3. Returns structured JSON responses
     4. Tracks metrics for fitness evaluation
     5. Manages wallet and economic transactions (FASE 2)
@@ -83,19 +82,24 @@ class BaseAgent:
     
     def __init__(self, 
                  genome: Genome,
-                 groq_api_key: str,
+                 groq_api_key: str = None,  # Deprecated, kept for compatibility
                  agent_id: Optional[str] = None,
                  model: str = "llama-3.3-70b-versatile",
                  credits_system: Optional[Any] = None,
-                 accounting_system: Optional[Any] = None):
+                 accounting_system: Optional[Any] = None,
+                 llm_manager: Optional[Any] = None):
         self.agent_id = agent_id or str(uuid.uuid4())
         self.genome = genome
         self.model = model
         self.metrics = AgentMetrics()
         self.action_history: List[AgentAction] = []
         
-        # Initialize Groq client
-        self.groq = Groq(api_key=groq_api_key)
+        # Use LLM Fallback Manager (singleton)
+        if llm_manager is None:
+            from app.llm_manager_singleton import get_llm_manager
+            self.llm_manager = get_llm_manager()
+        else:
+            self.llm_manager = llm_manager
         
         # FASE 2: Initialize economy integration
         self.credits_system = credits_system
@@ -115,6 +119,7 @@ class BaseAgent:
     def act(self, input_data: Dict[str, Any], action_type: str = "generic") -> Dict[str, Any]:
         """
         Main action method - agent decides what to do based on input
+        Uses LLM Fallback Manager for robust execution with automatic fallback
         
         Args:
             input_data: Context and information for the agent
@@ -127,7 +132,7 @@ class BaseAgent:
         
         logger.info(f"🎯 Agent {self.agent_id[:8]} acting: {action_type}")
         
-        # Construct messages for Groq
+        # Construct messages for LLM
         messages = [
             {
                 "role": "system",
@@ -140,17 +145,36 @@ class BaseAgent:
         ]
         
         try:
-            # Call Groq API (fast and cheap)
-            response = self.groq.chat.completions.create(
-                model=self.model,
+            # Use LLM Fallback Manager (automatic fallback Groq → Gemini → DeepSeek)
+            response, provider_used = self.llm_manager.chat(
                 messages=messages,
                 temperature=0.7,
-                max_tokens=2000
-                # Note: llama-3.3 doesn't support response_format yet
+                max_tokens=2000,
+                json_mode=True,
+                context=f"Agent {self.agent_id[:8]} - Action: {action_type}"
             )
             
-            # Try to parse response as JSON
-            content = response.choices[0].message.content
+            # Check if all providers failed
+            if response is None:
+                logger.error(f"❌ Todos los LLM providers fallaron - acción derivada al Congreso")
+                error_action = AgentAction(
+                    action_type=action_type,
+                    parameters=input_data,
+                    success=False
+                )
+                self._record_action(error_action)
+                
+                return {
+                    "success": False,
+                    "error": "All LLM providers failed - escalated to Congress",
+                    "action_type": action_type,
+                    "escalated_to_congress": True
+                }
+            
+            # Parse response content
+            content = response.get("content", "")
+            tokens_used = response.get("tokens_used", 0)
+            
             try:
                 result = json.loads(content)
             except json.JSONDecodeError:
@@ -161,6 +185,9 @@ class BaseAgent:
                     "success": True
                 }
             
+            # Add provider info to result
+            result["llm_provider"] = provider_used
+            
             # Calculate execution time
             execution_time = (datetime.utcnow() - start_time).total_seconds() * 1000
             
@@ -170,25 +197,28 @@ class BaseAgent:
                 parameters=input_data,
                 result=result,
                 success=True,
-                tokens_used=response.usage.total_tokens,
+                tokens_used=tokens_used,
                 execution_time_ms=int(execution_time)
             )
             
             self._record_action(action)
             
             # FASE 2: Record API cost
-            self._record_api_cost(response.usage.total_tokens)
+            self._record_api_cost(tokens_used)
             
             # FASE 2: Check for revenue in result
             if result.get('revenue', 0) > 0:
                 self._record_revenue(result['revenue'], f"{action_type}_generated")
             
-            logger.info(f"✅ Action completed in {execution_time:.0f}ms ({response.usage.total_tokens} tokens)")
+            logger.info(
+                f"✅ Action completed in {execution_time:.0f}ms "
+                f"({tokens_used} tokens via {provider_used})"
+            )
             
             return result
             
         except json.JSONDecodeError as e:
-            logger.error(f"❌ Groq returned invalid JSON: {e}")
+            logger.error(f"❌ LLM returned invalid JSON: {e}")
             error_action = AgentAction(
                 action_type=action_type,
                 parameters=input_data,

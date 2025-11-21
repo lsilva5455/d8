@@ -162,11 +162,16 @@ class ProcessSupervisor:
         logger.info(f"🚀 Iniciando {component['description']}...")
         
         try:
+            # Preparar environment con PYTHONPATH correcto
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(self.project_root)
+            
             if "script" in component:
                 script_path = self.project_root / component["script"]
                 process = subprocess.Popen(
                     [sys.executable, str(script_path)],
                     cwd=self.project_root,
+                    env=env,  # ← AGREGADO: Pasar environment con PYTHONPATH
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     bufsize=1,
@@ -176,6 +181,7 @@ class ProcessSupervisor:
                 process = subprocess.Popen(
                     [sys.executable, "-m", component["module"]],
                     cwd=self.project_root,
+                    env=env,  # ← AGREGADO: Pasar environment con PYTHONPATH
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     bufsize=1,
@@ -210,15 +216,30 @@ class ProcessSupervisor:
                 
                 logger.warning(f"⚠️  {name} terminó (exit code: {exit_code})")
                 if error_msg and error_msg != "No error output":
-                    logger.warning(f"   Error: {error_msg[:200]}")
+                    logger.warning(f"   Error: {error_msg[:500]}")  # Aumentado de 200 a 500
+                
+                # Detectar errores conocidos que no deben reiniciar inmediatamente
+                should_delay_restart = False
+                delay_seconds = 5
+                
+                if "Rate limit" in error_msg or "429" in error_msg:
+                    logger.warning(f"   ⏳ Rate limit detectado - Esperando 60s antes de reiniciar")
+                    should_delay_restart = True
+                    delay_seconds = 60
+                elif "ModuleNotFoundError" in error_msg:
+                    logger.error(f"   ❌ Error de importación - Verificar PYTHONPATH y dependencias")
+                    # No reintentar inmediatamente en errores de módulo
+                    delay_seconds = 30
                 
                 # Intentar reiniciar
                 if self.retry_counts[name] < self.max_retries:
                     self.retry_counts[name] += 1
                     logger.info(f"🔄 Reiniciando {name} (intento {self.retry_counts[name]}/{self.max_retries})")
                     
-                    # Esperar 5 segundos antes de reiniciar
-                    time.sleep(5)
+                    # Esperar antes de reiniciar
+                    if should_delay_restart or delay_seconds > 5:
+                        logger.info(f"   ⏳ Esperando {delay_seconds}s...")
+                    time.sleep(delay_seconds)
                     
                     # Buscar componente config
                     component = next(c for c in self.components if c["name"] == name)
@@ -226,6 +247,7 @@ class ProcessSupervisor:
                 else:
                     logger.error(f"❌ {name} alcanzó límite de reintentos ({self.max_retries})")
                     logger.error(f"   Componente {name} detenido permanentemente")
+                    logger.error(f"   Revisar logs en: {self.data_dir / 'logs'}")
     
     def stop_all(self):
         """Detener todos los procesos limpiamente"""

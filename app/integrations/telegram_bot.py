@@ -96,6 +96,9 @@ class CongressTelegramBot:
         self.app.add_handler(CommandHandler("merge", self.cmd_merge_tasks))
         self.app.add_handler(CommandHandler("search_tasks", self.cmd_search_tasks))
         self.app.add_handler(CommandHandler("nlp", self.cmd_nlp_task))  # NEW: Natural language
+        self.app.add_handler(CommandHandler("archive_preview", self.cmd_archive_preview))  # NEW: Preview
+        self.app.add_handler(CommandHandler("archive_stats", self.cmd_archive_stats))  # NEW: Stats
+        self.app.add_handler(CommandHandler("archive_now", self.cmd_archive_now))  # NEW: Execute
         
         # File operations commands
         self.app.add_handler(CommandHandler("ls", self.cmd_list_files))
@@ -439,6 +442,35 @@ El bot interpreta lenguaje natural y responde apropiadamente.
         await query.answer()
         
         data = query.data
+        
+        # Archive confirmations
+        if data.startswith("archive_confirm_"):
+            days = int(data.split("_")[2])
+            
+            from app.tasks.archiver import TaskArchiver
+            archiver = TaskArchiver(days_before_archive=days)
+            
+            # Ejecutar archivado
+            result = archiver.archive_tasks(dry_run=False)
+            
+            if result['archived'] > 0:
+                message = "✅ **ARCHIVADO COMPLETADO**\n\n"
+                message += f"Tareas archivadas: {result['archived']}\n"
+                message += f"Total completadas: {result['total_completed']}\n"
+                message += f"Backup creado: `PENDIENTES.md.bak`\n\n"
+                message += "**Tareas archivadas:**\n"
+                
+                for task in result['tasks']:
+                    message += f"• {task['title']}\n"
+                
+                await query.message.edit_text(message, parse_mode='Markdown')
+            else:
+                await query.message.edit_text("⚠️ No se archivó ninguna tarea")
+            return
+            
+        elif data == "archive_cancel":
+            await query.message.edit_text("❌ Archivado cancelado")
+            return
         
         # NLP confirmations
         if data.startswith("confirm_nlp_"):
@@ -1272,19 +1304,126 @@ El bot interpreta lenguaje natural y responde apropiadamente.
         except Exception as e:
             await query.answer(f"❌ Error: {e}", show_alert=True)
     
-    async def stop_async(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-                    message += f"• {assignment['title'][:50]}...\n"
-            
-            await update.message.reply_text(message, parse_mode='Markdown')
-            
-        except Exception as e:
-            await update.message.reply_text(f"❌ Error obteniendo progreso: {e}")
-    
     async def stop_async(self):
         """Stop bot asynchronously"""
         await self.app.updater.stop()
         await self.app.stop()
         await self.app.shutdown()
+    
+    async def cmd_archive_preview(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Preview de tareas a archivar"""
+        try:
+            from app.tasks.archiver import TaskArchiver
+            
+            # Obtener días desde args (default: 2)
+            days = 2
+            if context.args:
+                try:
+                    days = int(context.args[0])
+                except ValueError:
+                    await update.message.reply_text("❌ Uso: /archive_preview [días]\nEjemplo: /archive_preview 3")
+                    return
+            
+            archiver = TaskArchiver(days_before_archive=days)
+            preview = archiver.preview_archivable()
+            
+            await update.message.reply_text(
+                preview,
+                parse_mode='Markdown',
+                disable_web_page_preview=True
+            )
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def cmd_archive_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Estadísticas de archivado"""
+        try:
+            from app.tasks.archiver import TaskArchiver
+            
+            # Obtener días desde args (default: 2)
+            days = 2
+            if context.args:
+                try:
+                    days = int(context.args[0])
+                except ValueError:
+                    await update.message.reply_text("❌ Uso: /archive_stats [días]\nEjemplo: /archive_stats 3")
+                    return
+            
+            archiver = TaskArchiver(days_before_archive=days)
+            stats = archiver.get_stats()
+            
+            message = "📊 **ESTADÍSTICAS DE ARCHIVADO**\n\n"
+            message += f"Total completadas: {stats['total_completed']}\n"
+            message += f"Archivables ahora: {stats['archivable_now']}\n"
+            message += f"En período de espera: {stats['waiting_period']}\n"
+            message += f"Umbral: {stats['days_threshold']} días\n\n"
+            
+            if stats['tasks_by_days']:
+                message += "**Distribución por días:**\n"
+                for days_count in sorted(stats['tasks_by_days'].keys()):
+                    count = stats['tasks_by_days'][days_count]
+                    status = "✅ Archivable" if days_count >= stats['days_threshold'] else "⏳ Esperando"
+                    message += f"  {days_count} días: {count} tareas - {status}\n"
+            
+            await update.message.reply_text(
+                message,
+                parse_mode='Markdown'
+            )
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def cmd_archive_now(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Ejecutar archivado ahora (con confirmación)"""
+        try:
+            from app.tasks.archiver import TaskArchiver
+            
+            # Obtener días desde args (default: 2)
+            days = 2
+            if context.args:
+                try:
+                    days = int(context.args[0])
+                except ValueError:
+                    await update.message.reply_text("❌ Uso: /archive_now [días]\nEjemplo: /archive_now 3")
+                    return
+            
+            archiver = TaskArchiver(days_before_archive=days)
+            
+            # Preview primero
+            preview_result = archiver.archive_tasks(dry_run=True)
+            
+            if preview_result['archivable'] == 0:
+                await update.message.reply_text("✅ No hay tareas para archivar")
+                return
+            
+            # Botones de confirmación
+            keyboard = [
+                [
+                    InlineKeyboardButton("✅ Sí, archivar", callback_data=f"archive_confirm_{days}"),
+                    InlineKeyboardButton("❌ Cancelar", callback_data="archive_cancel")
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            message = f"🗄️ **CONFIRMAR ARCHIVADO**\n\n"
+            message += f"Se archivarán **{preview_result['archivable']} tareas** completadas hace >{days} días\n\n"
+            message += "**Tareas a archivar:**\n"
+            
+            for task in preview_result['tasks']:
+                days_count = task['days_since_completion']
+                message += f"• {task['title']} ({days_count} días)\n"
+            
+            message += "\n⚠️ Se creará backup automático\n"
+            
+            await update.message.reply_text(
+                message,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error: {e}")
 
 
 # Example usage
