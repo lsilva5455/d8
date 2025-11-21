@@ -1,6 +1,6 @@
 {
-  "branch": "main",
-  "commit": "76d62ab",
+  "branch": "docker-workers",
+  "commit": "d3972d0",
   "version": "0.0.8",
-  "deployed_at": "2025-11-19T15:24:32.086684Z"
+  "deployed_at": "2025-11-21T12:54:25.697899Z"
 }

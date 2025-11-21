@@ -86,6 +86,17 @@ class CongressTelegramBot:
         self.app.add_handler(CommandHandler("resume", self.cmd_resume_congress))
         self.app.add_handler(CommandHandler("help", self.cmd_help))
         
+        # Task management commands (NEW - PENDIENTES.md integration)
+        self.app.add_handler(CommandHandler("tasks", self.cmd_list_tasks))
+        self.app.add_handler(CommandHandler("pending", self.cmd_list_tasks))
+        self.app.add_handler(CommandHandler("assign", self.cmd_assign_pending_task))
+        self.app.add_handler(CommandHandler("details", self.cmd_task_details))
+        self.app.add_handler(CommandHandler("progress", self.cmd_task_progress))
+        self.app.add_handler(CommandHandler("split", self.cmd_split_task))
+        self.app.add_handler(CommandHandler("merge", self.cmd_merge_tasks))
+        self.app.add_handler(CommandHandler("search_tasks", self.cmd_search_tasks))
+        self.app.add_handler(CommandHandler("nlp", self.cmd_nlp_task))  # NEW: Natural language
+        
         # File operations commands
         self.app.add_handler(CommandHandler("ls", self.cmd_list_files))
         self.app.add_handler(CommandHandler("read", self.cmd_read_file))
@@ -119,6 +130,11 @@ class CongressTelegramBot:
             "• Experimentos: /experiments\n"
             "• Tarea: /task <desc>\n"
             "• Pausar: /stop | /resume\n\n"
+            "*Pendientes:*\n"
+            "• Listar: /tasks o /pending\n"
+            "• Asignar: /assign <id>\n"
+            "• Detalles: /details <id>\n"
+            "• Progreso: /progress\n\n"
             "*Archivos:*\n"
             "• Listar: /ls [dir]\n"
             "• Leer: /read <archivo>\n"
@@ -277,6 +293,17 @@ class CongressTelegramBot:
 /stop - Pausar congreso
 /resume - Reanudar congreso
 
+*Gestión de Pendientes (NUEVO):*
+/tasks [N] - Listar tareas pendientes (top N, default 10)
+/pending - Alias de /tasks
+/assign <id> - Asignar tarea al congreso (ej: /assign A1)
+/details <id> - Ver detalles completos de una tarea
+/progress - Ver estadísticas generales
+/split <id> | sub1 | sub2 | ... - Dividir tarea en subtareas
+/merge <id1>,<id2> | título | desc - Fusionar tareas
+/search_tasks <texto> - Buscar tareas por palabra clave
+/nlp <comando> - Edición con lenguaje natural (🆕)
+
 *Gestión de Archivos:*
 /ls [dir] - Listar archivos en directorio
 /read <archivo> - Leer contenido de archivo
@@ -413,6 +440,21 @@ El bot interpreta lenguaje natural y responde apropiadamente.
         
         data = query.data
         
+        # NLP confirmations
+        if data.startswith("confirm_nlp_"):
+            action_id = data.replace("confirm_nlp_nlp_", "")
+            await self.handle_nlp_callback(query, action_id, "confirm")
+            return
+        elif data.startswith("cancel_nlp_"):
+            action_id = data.replace("cancel_nlp_nlp_", "")
+            await self.handle_nlp_callback(query, action_id, "cancel")
+            return
+        elif data.startswith("edit_nlp_"):
+            action_id = data.replace("edit_nlp_nlp_", "")
+            await self.handle_nlp_callback(query, action_id, "edit")
+            return
+        
+        # Experiment approvals
         if data.startswith("approve_"):
             experiment_id = data.replace("approve_", "")
             try:
@@ -787,6 +829,456 @@ El bot interpreta lenguaje natural y responde apropiadamente.
             
         except Exception as e:
             await update.message.reply_text(f"❌ Error: {e}")
+    
+    # =========================================================================
+    # TASK MANAGEMENT COMMANDS (Integration with PENDIENTES.md)
+    # =========================================================================
+    
+    async def cmd_list_tasks(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """List pending tasks from PENDIENTES.md"""
+        try:
+            from app.tasks.processor import TaskProcessor
+            processor = TaskProcessor()
+            
+            max_tasks = 10
+            if context.args and context.args[0].isdigit():
+                max_tasks = int(context.args[0])
+            
+            message = processor.generate_task_list_for_telegram(max_tasks)
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error listando tareas: {e}")
+    
+    async def cmd_assign_pending_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Assign a task from PENDIENTES.md to Congress"""
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /assign <task_id>\n\n"
+                "Ejemplo: /assign a3b5c7d9\n\n"
+                "💡 Usa /tasks para ver IDs disponibles"
+            )
+            return
+        
+        task_id = context.args[0]
+        
+        try:
+            from app.tasks.processor import TaskProcessor
+            processor = TaskProcessor()
+            
+            task = processor.get_task_by_id(task_id)
+            
+            if not task:
+                await update.message.reply_text(
+                    f"❌ Tarea no encontrada: `{task_id}`\n\n"
+                    "💡 Usa /tasks para ver IDs disponibles",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            success = processor.assign_task(task_id, assigned_to="Congress")
+            
+            if success:
+                self.congress.assign_manual_task(task_id, requested_by="Leo (Telegram)")
+                
+                priority_stars = "🔥" * task.priority
+                await update.message.reply_text(
+                    f"✅ *Tarea asignada al congreso*\n\n"
+                    f"**{task.title}**\n\n"
+                    f"ID: `{task_id[:8]}`\n"
+                    f"Prioridad: {priority_stars}\n"
+                    f"Estimación: {task.estimated_hours or '?'}h\n\n"
+                    f"El congreso comenzará a trabajar en esto.\n"
+                    f"Te notificaré cuando complete la tarea.",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text(
+                    f"⚠️ No se pudo asignar la tarea.\n"
+                    f"Puede estar ya asignada o completada."
+                )
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error asignando tarea: {e}")
+    
+    async def cmd_task_details(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show detailed information about a task"""
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /details <task_id>\n\n"
+                "Ejemplo: /details a3b5c7d9"
+            )
+            return
+        
+        task_id = context.args[0]
+        
+        try:
+            from app.tasks.processor import TaskProcessor
+            processor = TaskProcessor()
+            
+            message = processor.get_task_details_for_telegram(task_id)
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error obteniendo detalles: {e}")
+    
+    async def cmd_task_progress(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show overall task completion progress"""
+        try:
+            from app.tasks.processor import TaskProcessor
+            processor = TaskProcessor()
+            
+            stats = processor.get_completion_stats()
+            active = processor.get_active_assignments()
+            
+            message = "📊 *PROGRESO DE TAREAS*\n\n"
+            message += f"📋 Total: {stats['total_tasks']}\n"
+            message += f"⏳ Pendientes: {stats['pending']}\n"
+            message += f"⚙️ En proceso: {stats['in_progress']}\n"
+            message += f"✅ Completadas: {stats['completed']}\n\n"
+            message += f"📈 Tasa de completitud: {stats['completion_rate']:.1f}%\n"
+            
+            if active:
+                message += f"\n*Tareas activas:*\n"
+                for assignment in active[:5]:
+                    message += f"- {assignment['task']['title'][:50]}...\n"
+            
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error obteniendo progreso: {e}")
+    
+    async def cmd_split_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Split a task into subtasks
+        
+        Usage: /split <task_id> | subtask1 | subtask2 | subtask3
+        Example: /split A1 | Setup database | Create models | Add migrations
+        """
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /split <task_id> | subtask1 | subtask2 | ...\n\n"
+                "Ejemplo:\n"
+                "/split A1 | Setup database | Create models | Add migrations\n\n"
+                "💡 Usa /tasks para ver IDs disponibles"
+            )
+            return
+        
+        # Parsear argumentos: task_id | subtask1 | subtask2 ...
+        full_text = ' '.join(context.args)
+        parts = [p.strip() for p in full_text.split('|')]
+        
+        if len(parts) < 3:  # ID + al menos 2 subtasks
+            await update.message.reply_text(
+                "❌ Debes especificar al menos 2 subtareas.\n\n"
+                "Ejemplo: /split A1 | Subtarea 1 | Subtarea 2"
+            )
+            return
+        
+        task_id = parts[0]
+        subtask_titles = parts[1:]
+        
+        try:
+            from app.tasks.editor import TaskEditor
+            from pathlib import Path
+            
+            pendientes_file = Path(__file__).parents[2] / "PENDIENTES.md"
+            editor = TaskEditor(pendientes_file)
+            
+            success, message = editor.split_task(task_id, subtask_titles)
+            
+            if success:
+                await update.message.reply_text(
+                    f"{message}\n\n"
+                    f"📝 **Subtareas creadas:**\n" +
+                    '\n'.join(f"{i+1}. {title}" for i, title in enumerate(subtask_titles)),
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text(message)
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error dividiendo tarea: {e}")
+    
+    async def cmd_merge_tasks(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Merge multiple tasks into one
+        
+        Usage: /merge <id1>,<id2>,<id3> | New Title | New Description
+        Example: /merge A1,A2,A3 | Combined Task | This merges all three tasks
+        """
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /merge <id1>,<id2>,... | Título | Descripción\n\n"
+                "Ejemplo:\n"
+                "/merge A1,A2,A3 | Combined Task | Description of merged task\n\n"
+                "💡 Usa /tasks para ver IDs disponibles"
+            )
+            return
+        
+        # Parsear: id1,id2,id3 | title | description
+        full_text = ' '.join(context.args)
+        parts = [p.strip() for p in full_text.split('|')]
+        
+        if len(parts) < 3:
+            await update.message.reply_text(
+                "❌ Formato incorrecto.\n\n"
+                "Uso: /merge <id1>,<id2> | Título | Descripción"
+            )
+            return
+        
+        task_ids_str = parts[0]
+        new_title = parts[1]
+        new_description = parts[2]
+        
+        # Parsear IDs
+        task_ids = [tid.strip() for tid in task_ids_str.split(',')]
+        
+        if len(task_ids) < 2:
+            await update.message.reply_text(
+                "❌ Debes especificar al menos 2 tareas para fusionar.\n\n"
+                "Ejemplo: /merge A1,A2 | New Task | Description"
+            )
+            return
+        
+        try:
+            from app.tasks.editor import TaskEditor
+            from pathlib import Path
+            
+            pendientes_file = Path(__file__).parents[2] / "PENDIENTES.md"
+            editor = TaskEditor(pendientes_file)
+            
+            success, message = editor.merge_tasks(task_ids, new_title, new_description)
+            
+            if success:
+                await update.message.reply_text(
+                    f"{message}\n\n"
+                    f"📝 **Nueva tarea:** {new_title}\n"
+                    f"🔗 **Tareas fusionadas:** {', '.join(task_ids)}",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text(message)
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error fusionando tareas: {e}")
+    
+    async def cmd_search_tasks(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Search tasks by keyword"""
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /search_tasks <palabra clave>\n\n"
+                "Ejemplo: /search_tasks telegram"
+            )
+            return
+        
+        query = ' '.join(context.args)
+        
+        try:
+            from app.tasks.processor import TaskProcessor
+            processor = TaskProcessor()
+            
+            matches = processor.search_tasks(query)
+            
+            if not matches:
+                await update.message.reply_text(
+                    f"🔍 No se encontraron tareas con: *{query}*",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            message = f"🔍 **RESULTADOS DE BÚSQUEDA:** \"{query}\"\n\n"
+            message += f"📊 {len(matches)} coincidencias\n\n"
+            
+            for i, task in enumerate(matches[:10], 1):
+                priority_emoji = {5: "🔥", 4: "🔴", 3: "🟡", 2: "🟢", 1: "⚪"}.get(task.priority, "📋")
+                message += f"{i}. {priority_emoji} {task.title[:60]}\n"
+                
+                desc_preview = task.description[:50].replace('\n', ' ')
+                if len(task.description) > 50:
+                    desc_preview += "..."
+                message += f"     💬 {desc_preview}\n\n"
+            
+            if len(matches) > 10:
+                message += f"\n_Mostrando 10 de {len(matches)} resultados_"
+            
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error buscando tareas: {e}")
+    
+    async def cmd_nlp_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Procesar comando de tarea en lenguaje natural
+        
+        Usage: /nlp <comando en lenguaje natural>
+        Examples:
+        - /nlp divide la tarea A1 en 3 partes
+        - /nlp fusiona A1 y A2
+        - /nlp sugiere subtareas para A5
+        """
+        if not context.args:
+            await update.message.reply_text(
+                "❌ Uso: /nlp <comando en lenguaje natural>\n\n"
+                "**Ejemplos:**\n"
+                "• `/nlp divide la tarea A1 en 3 partes`\n"
+                "• `/nlp fusiona las tareas A1 y A2`\n"
+                "• `/nlp sugiere subtareas para A5`\n"
+                "• `/nlp muéstrame los detalles de A1`\n\n"
+                "💡 También puedes escribir directamente sin /nlp",
+                parse_mode='Markdown'
+            )
+            return
+        
+        user_input = ' '.join(context.args)
+        
+        try:
+            from app.tasks.nlp_processor import NLPTaskProcessor
+            from app.tasks.processor import TaskProcessor
+            import os
+            
+            # Obtener API key de Groq
+            groq_api_key = os.getenv("GROQ_API_KEY")
+            if not groq_api_key:
+                await update.message.reply_text(
+                    "❌ Error: GROQ_API_KEY no configurada.\n"
+                    "Configura la variable de entorno para usar NLP."
+                )
+                return
+            
+            # Procesar comando
+            nlp = NLPTaskProcessor(groq_api_key)
+            
+            # Obtener contexto de tareas
+            processor = TaskProcessor()
+            task_context = processor.list_pending_tasks(max_tasks=20)
+            
+            # Enviar mensaje de "procesando"
+            processing_msg = await update.message.reply_text(
+                "🤔 Analizando tu solicitud...",
+                parse_mode='Markdown'
+            )
+            
+            # Procesar
+            result = nlp.process_natural_command(user_input, task_context)
+            
+            # Eliminar mensaje de procesando
+            await processing_msg.delete()
+            
+            # Manejar error
+            if "error" in result:
+                error_msg = f"❌ {result['error']}\n\n"
+                
+                if "suggestions" in result:
+                    error_msg += "💡 **Prueba con:**\n"
+                    error_msg += "\n".join(f"• {s}" for s in result['suggestions'])
+                elif "suggestion" in result:
+                    error_msg += f"💡 {result['suggestion']}"
+                
+                await update.message.reply_text(error_msg, parse_mode='Markdown')
+                return
+            
+            # Si requiere confirmación, guardar estado y mostrar botones
+            if result.get("requires_confirmation"):
+                # Guardar en contexto de usuario (temporal)
+                if not hasattr(update.message.from_user, 'pending_actions'):
+                    update.message.from_user.pending_actions = {}
+                
+                action_id = f"nlp_{update.message.message_id}"
+                update.message.from_user.pending_actions[action_id] = result["action"]
+                
+                # Crear botones de confirmación
+                from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+                
+                keyboard = [
+                    [
+                        InlineKeyboardButton("✅ Confirmar", callback_data=f"confirm_nlp_{action_id}"),
+                        InlineKeyboardButton("❌ Cancelar", callback_data=f"cancel_nlp_{action_id}")
+                    ],
+                    [
+                        InlineKeyboardButton("✏️ Modificar", callback_data=f"edit_nlp_{action_id}")
+                    ]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                
+                await update.message.reply_text(
+                    result["message"],
+                    parse_mode='Markdown',
+                    reply_markup=reply_markup
+                )
+            else:
+                # No requiere confirmación, mostrar resultado
+                await update.message.reply_text(
+                    result["message"],
+                    parse_mode='Markdown'
+                )
+                
+        except Exception as e:
+            await update.message.reply_text(
+                f"❌ Error procesando comando NLP: {e}\n\n"
+                "Usa comandos básicos: /split o /merge"
+            )
+    
+    async def handle_nlp_callback(self, query, action_id: str, action: str):
+        """Manejar callbacks de confirmación NLP"""
+        
+        try:
+            from app.tasks.nlp_processor import NLPTaskProcessor
+            import os
+            
+            groq_api_key = os.getenv("GROQ_API_KEY")
+            nlp = NLPTaskProcessor(groq_api_key)
+            
+            if action == "confirm":
+                # Obtener acción pendiente
+                if hasattr(query.from_user, 'pending_actions'):
+                    pending_action = query.from_user.pending_actions.get(f"nlp_{action_id}")
+                    
+                    if pending_action:
+                        # Ejecutar acción
+                        success, message = nlp.execute_action(pending_action)
+                        
+                        if success:
+                            await query.message.edit_text(
+                                f"✅ {message}",
+                                parse_mode='Markdown'
+                            )
+                        else:
+                            await query.message.edit_text(
+                                f"❌ {message}",
+                                parse_mode='Markdown'
+                            )
+                        
+                        # Limpiar acción pendiente
+                        del query.from_user.pending_actions[f"nlp_{action_id}"]
+                    else:
+                        await query.answer("⚠️ Acción expirada", show_alert=True)
+                else:
+                    await query.answer("⚠️ Acción expirada", show_alert=True)
+                    
+            elif action == "cancel":
+                await query.message.edit_text("❌ Operación cancelada")
+                
+                # Limpiar acción pendiente
+                if hasattr(query.from_user, 'pending_actions'):
+                    query.from_user.pending_actions.pop(f"nlp_{action_id}", None)
+                    
+            elif action == "edit":
+                await query.answer(
+                    "✏️ Para modificar, envía un nuevo comando /nlp",
+                    show_alert=True
+                )
+                
+        except Exception as e:
+            await query.answer(f"❌ Error: {e}", show_alert=True)
+    
+    async def stop_async(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+                    message += f"• {assignment['title'][:50]}...\n"
+            
+            await update.message.reply_text(message, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ Error obteniendo progreso: {e}")
     
     async def stop_async(self):
         """Stop bot asynchronously"""

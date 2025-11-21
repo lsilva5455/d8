@@ -106,18 +106,68 @@ Estos archivos se crean automáticamente la primera vez que ejecutas el sistema.
 
 ### 4. Ejecutar
 
+#### Método 1: Launcher Unificado (Recomendado)
+
 ```bash
-# Opción 1: Sistema completo (orchestrator + worker)
-python -m app.main
+# Activar entorno virtual
+.\venv\Scripts\Activate.ps1  # Windows
+# o
+source venv/bin/activate     # Linux/Mac
 
-# Opción 2: Congreso autónomo (mejora continua)
-python scripts\autonomous_congress.py
+# Ejecutar launcher
+python start_d8.py
 
-# Opción 3: Niche Discovery
-python scripts\niche_discovery_agent.py
+# Menú interactivo:
+# 1. 🏛️  Congreso Autónomo
+# 2. 💎 Niche Discovery
+# 3. 🧬 Sistema Evolutivo
+# 4. 🎯 Orchestrator
+# 5. 🔧 Slave Server
+# 6. 🔄 Supervisor D8 (Auto-restart)
+# 7. ❌ Salir
+```
 
-# Opción 4: Sistema evolutivo
-python -m app.evolution.groq_evolution
+#### Método 2: CLI Directo (Para Scripts)
+
+```bash
+# Lanzar componentes directamente
+python start_d8.py congress       # Congreso Autónomo
+python start_d8.py niche          # Niche Discovery
+python start_d8.py evolution      # Sistema Evolutivo
+python start_d8.py orchestrator   # Orchestrator
+python start_d8.py slave          # Slave Server (ejecutar)
+python start_d8.py slaves         # Gestión de Slaves (agregar/instalar/ver)
+python start_d8.py supervisor     # Supervisor (Auto-restart)
+```
+
+#### Método 3: Supervisor (Producción 24/7)
+
+```bash
+# Activar entorno virtual
+.\venv\Scripts\Activate.ps1
+
+# Iniciar supervisor con auto-restart
+python start_d8.py supervisor
+
+# El supervisor automáticamente:
+# ✅ Inicia: Congreso, Niche Discovery, Orchestrator
+# ✅ Monitorea health cada 10 segundos
+# ✅ Reinicia automáticamente si fallan
+# ✅ Límite: 5 reintentos por componente
+# ✅ Ctrl+C: Cierre limpio de todos los procesos
+
+# Ver logs en tiempo real (otra terminal):
+Get-Content "$env:USERPROFILE\Documents\d8_data\logs\supervisor.log" -Wait -Tail 20
+```
+
+#### Método 4: Manual (Desarrollo)
+
+```bash
+# Ejecutar componentes individuales
+python -m app.main                          # Sistema completo
+python scripts\autonomous_congress.py       # Solo congreso
+python scripts\niche_discovery_agent.py     # Solo niche discovery
+python -m app.evolution.groq_evolution      # Solo evolución
 ```
 
 ---

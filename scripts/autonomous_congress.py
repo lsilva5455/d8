@@ -53,6 +53,13 @@ class AutonomousCongress:
         self.total_experiments = 0
         self.improvements_implemented = 0
         self.last_experiment = None
+        
+        # Task management integration
+        try:
+            from app.tasks.processor import TaskProcessor
+            self.task_processor = TaskProcessor()
+        except:
+            self.task_processor = None
     
     def _initialize_congress(self) -> List[Dict[str, Any]]:
         """Initialize autonomous congress members"""
@@ -235,7 +242,39 @@ Respond with validation results:
         } for exp in recent]
     
     def assign_manual_task(self, description: str, requested_by: str) -> str:
-        """Leo assigns specific task via Telegram"""
+        """
+        Leo assigns specific task via Telegram or direct request
+        
+        Args:
+            description: Task description or task_id from PENDIENTES.md
+            requested_by: Who requested it
+            
+        Returns:
+            task_id of the assigned task
+        """
+        # Check if it's a task_id from PENDIENTES.md
+        if self.task_processor:
+            task = self.task_processor.get_task_by_id(description)
+            
+            if task:
+                # Es un ID válido de PENDIENTES.md
+                task_id = task.task_id
+                self.task_processor.assign_task(task_id, assigned_to="Congress")
+                
+                self.manual_tasks.append({
+                    "id": f"pending_{task_id[:8]}",
+                    "task_id": task_id,
+                    "title": task.title,
+                    "description": task.description[:200],
+                    "requested_by": requested_by,
+                    "status": "assigned",
+                    "created_at": time.time()
+                })
+                
+                print(f"✅ Tarea asignada desde PENDIENTES.md: {task.title}")
+                return task_id
+        
+        # Si no, es una descripción libre (legacy behavior)
         task_id = f"manual_{int(time.time())}_{hash(description) % 10000}"
         
         self.manual_tasks.append({
